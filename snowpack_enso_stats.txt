@@ -1,0 +1,32 @@
+Colorado Statewide April 1 SWE (% of Median) by ENSO Phase
+Water Years 1979–2024  (N = 46)
+============================================================
+
+El Niño  (n = 11)
+  Mean   : 106.1 %
+  Median : 108.0 %
+  Std Dev: 28.0 %
+  Range  : 57 – 153 %
+  Below median (< 100 %): 45 %
+
+Neutral  (n = 22)
+  Mean   : 102.1 %
+  Median : 101.0 %
+  Std Dev: 20.0 %
+  Range  : 66 – 155 %
+  Below median (< 100 %): 41 %
+
+La Niña  (n = 13)
+  Mean   : 93.5 %
+  Median : 93.0 %
+  Std Dev: 15.2 %
+  Range  : 65 – 118 %
+  Below median (< 100 %): 62 %
+
+One-way ANOVA (El Niño / Neutral / La Niña)
+  F = 1.18,  p = 0.3162
+
+Interpretation:
+  p > 0.05 → no statistically significant difference in April 1 SWE
+  across ENSO phases for Colorado statewide.  La Niña does not
+  reliably suppress snowpack at the statewide scale.

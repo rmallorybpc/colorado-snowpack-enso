@@ -1,0 +1,371 @@
+/* =========================================================
+   tmg.css  –  TMG Design System  (v1.0)
+   The Media Guild · https://themediaguild.com
+   ========================================================= */
+
+/* ── Custom properties ──────────────────────────────────── */
+:root {
+  --tmg-cream:          #FDFAF4;
+  --tmg-cream-dark:     #F3EFE6;
+  --tmg-white:          #FFFFFF;
+  --tmg-navy:           #1B2A3B;
+  --tmg-navy-mid:       #2E4160;
+  --tmg-accent:         #C8512A;
+  --tmg-accent-hover:   #A33E1C;
+  --tmg-text:           #1A1A1A;
+  --tmg-text-muted:     #5A5A5A;
+  --tmg-border:         #DDD8CE;
+  --tmg-shadow:         0 2px 12px rgba(0,0,0,.08);
+  --tmg-shadow-lg:      0 6px 24px rgba(0,0,0,.12);
+  --tmg-radius:         8px;
+  --tmg-radius-lg:      14px;
+  --tmg-font-sans:      "Inter", "Segoe UI", Arial, sans-serif;
+  --tmg-font-serif:     "Georgia", "Times New Roman", serif;
+  --tmg-max-width:      1100px;
+}
+
+/* ── Reset & base ───────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: var(--tmg-font-sans);
+  background: var(--tmg-cream);
+  color: var(--tmg-text);
+  line-height: 1.65;
+  font-size: 16px;
+}
+
+img { max-width: 100%; height: auto; display: block; }
+
+a { color: var(--tmg-accent); text-decoration: none; }
+a:hover { color: var(--tmg-accent-hover); text-decoration: underline; }
+
+/* ── Nav ────────────────────────────────────────────────── */
+.tmg-nav {
+  background: var(--tmg-navy);
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  box-shadow: 0 2px 8px rgba(0,0,0,.25);
+}
+
+.tmg-nav__inner {
+  max-width: var(--tmg-max-width);
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 1.25rem;
+  height: 56px;
+}
+
+.tmg-nav__logo {
+  font-weight: 700;
+  font-size: 1.05rem;
+  color: var(--tmg-white);
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+.tmg-nav__logo:hover { color: var(--tmg-cream); text-decoration: none; }
+
+.tmg-nav__links {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  list-style: none;
+}
+
+.tmg-nav__links a {
+  color: rgba(255,255,255,.80);
+  font-size: .875rem;
+  font-weight: 500;
+  padding: .45rem .75rem;
+  border-radius: 5px;
+  transition: background .18s, color .18s;
+}
+.tmg-nav__links a:hover {
+  background: rgba(255,255,255,.12);
+  color: var(--tmg-white);
+  text-decoration: none;
+}
+
+/* ── Dropdown (Tool Suite) ──────────────────────────────── */
+.tmg-dropdown { position: relative; }
+
+.tmg-dropdown__toggle {
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: .35rem;
+  color: rgba(255,255,255,.80);
+  font-size: .875rem;
+  font-weight: 500;
+  padding: .45rem .75rem;
+  border-radius: 5px;
+  background: transparent;
+  border: none;
+  font-family: inherit;
+  transition: background .18s, color .18s;
+  user-select: none;
+}
+.tmg-dropdown__toggle:hover,
+.tmg-dropdown[data-open] .tmg-dropdown__toggle {
+  background: rgba(255,255,255,.12);
+  color: var(--tmg-white);
+}
+
+.tmg-dropdown__arrow {
+  font-size: .65rem;
+  transition: transform .2s;
+}
+.tmg-dropdown[data-open] .tmg-dropdown__arrow {
+  transform: rotate(180deg);
+}
+
+.tmg-dropdown__menu {
+  display: none;
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  min-width: 220px;
+  background: var(--tmg-white);
+  border: 1px solid var(--tmg-border);
+  border-radius: var(--tmg-radius);
+  box-shadow: var(--tmg-shadow-lg);
+  padding: .5rem 0;
+  list-style: none;
+}
+.tmg-dropdown[data-open] .tmg-dropdown__menu { display: block; }
+
+.tmg-dropdown__menu li a {
+  display: block;
+  padding: .55rem 1.1rem;
+  color: var(--tmg-text);
+  font-size: .875rem;
+  font-weight: 500;
+  transition: background .15s;
+}
+.tmg-dropdown__menu li a:hover {
+  background: var(--tmg-cream-dark);
+  text-decoration: none;
+}
+
+/* ── Hero ───────────────────────────────────────────────── */
+.tmg-hero {
+  background: linear-gradient(135deg, var(--tmg-navy) 0%, var(--tmg-navy-mid) 100%);
+  color: var(--tmg-white);
+  padding: 4rem 1.25rem 3.5rem;
+  text-align: center;
+}
+
+.tmg-hero__kicker {
+  font-size: .8rem;
+  font-weight: 700;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,.60);
+  margin-bottom: .75rem;
+}
+
+.tmg-hero__headline {
+  font-family: var(--tmg-font-serif);
+  font-size: clamp(1.65rem, 4vw, 2.75rem);
+  line-height: 1.22;
+  max-width: 760px;
+  margin: 0 auto .85rem;
+  font-weight: normal;
+}
+
+.tmg-hero__dek {
+  font-size: 1.05rem;
+  color: rgba(255,255,255,.78);
+  max-width: 640px;
+  margin: 0 auto;
+}
+
+/* ── Container ──────────────────────────────────────────── */
+.tmg-container {
+  max-width: var(--tmg-max-width);
+  margin: 0 auto;
+  padding: 0 1.25rem;
+}
+
+/* ── Card ───────────────────────────────────────────────── */
+.tmg-card {
+  background: var(--tmg-white);
+  border: 1px solid var(--tmg-border);
+  border-radius: var(--tmg-radius-lg);
+  box-shadow: var(--tmg-shadow);
+  padding: 2rem 2.25rem;
+  margin-bottom: 2rem;
+}
+
+.tmg-card__title {
+  font-size: 1.2rem;
+  font-weight: 700;
+  margin-bottom: 1rem;
+  color: var(--tmg-navy);
+}
+
+/* ── Section label ──────────────────────────────────────── */
+.tmg-section-label {
+  font-size: .75rem;
+  font-weight: 700;
+  letter-spacing: .10em;
+  text-transform: uppercase;
+  color: var(--tmg-accent);
+  margin-bottom: .5rem;
+}
+
+/* ── Stat row ───────────────────────────────────────────── */
+.tmg-stat-row {
+  display: flex;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+  margin: 1.25rem 0;
+}
+
+.tmg-stat {
+  flex: 1;
+  min-width: 130px;
+  background: var(--tmg-cream-dark);
+  border-radius: var(--tmg-radius);
+  padding: 1rem 1.1rem;
+  text-align: center;
+}
+
+.tmg-stat__value {
+  font-size: 1.65rem;
+  font-weight: 700;
+  color: var(--tmg-navy);
+  display: block;
+}
+
+.tmg-stat__label {
+  font-size: .78rem;
+  color: var(--tmg-text-muted);
+  margin-top: .2rem;
+}
+
+/* ── Phase pills ────────────────────────────────────────── */
+.tmg-phase-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+  margin: 1.25rem 0;
+}
+
+.tmg-phase-pill {
+  border-radius: var(--tmg-radius);
+  padding: 1.1rem 1.25rem;
+  color: #fff;
+}
+.tmg-phase-pill--elnino  { background: #C0473A; }
+.tmg-phase-pill--neutral { background: #5578A8; }
+.tmg-phase-pill--lanina  { background: #3A7F92; }
+
+.tmg-phase-pill__name {
+  font-size: .8rem;
+  font-weight: 700;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  opacity: .85;
+}
+
+.tmg-phase-pill__mean {
+  font-size: 1.65rem;
+  font-weight: 700;
+  margin: .25rem 0 .1rem;
+}
+
+.tmg-phase-pill__detail {
+  font-size: .78rem;
+  opacity: .80;
+}
+
+/* ── Key finding ────────────────────────────────────────── */
+.tmg-finding {
+  border-left: 4px solid var(--tmg-accent);
+  padding: .85rem 1.25rem;
+  background: #FFF7F4;
+  border-radius: 0 var(--tmg-radius) var(--tmg-radius) 0;
+  font-size: 1.02rem;
+  line-height: 1.55;
+  margin: 1.25rem 0;
+}
+
+.tmg-finding strong { color: var(--tmg-accent); }
+
+/* ── Data table ─────────────────────────────────────────── */
+.tmg-table-wrap { overflow-x: auto; }
+
+table.tmg-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: .9rem;
+}
+
+table.tmg-table th {
+  background: var(--tmg-cream-dark);
+  text-align: left;
+  padding: .65rem 1rem;
+  font-weight: 700;
+  color: var(--tmg-navy);
+  border-bottom: 2px solid var(--tmg-border);
+}
+
+table.tmg-table td {
+  padding: .6rem 1rem;
+  border-bottom: 1px solid var(--tmg-border);
+}
+
+table.tmg-table tbody tr:last-child td { border-bottom: none; }
+table.tmg-table tbody tr:hover td { background: var(--tmg-cream-dark); }
+
+/* ── Chart figure ───────────────────────────────────────── */
+.tmg-figure { margin: 1.5rem 0; }
+
+.tmg-figure img {
+  border-radius: var(--tmg-radius);
+  border: 1px solid var(--tmg-border);
+  width: 100%;
+}
+
+.tmg-figure figcaption {
+  margin-top: .6rem;
+  font-size: .82rem;
+  color: var(--tmg-text-muted);
+  text-align: center;
+}
+
+/* ── Footer ─────────────────────────────────────────────── */
+.tmg-footer {
+  background: var(--tmg-navy);
+  color: rgba(255,255,255,.55);
+  font-size: .82rem;
+  text-align: center;
+  padding: 1.75rem 1.25rem;
+  margin-top: 4rem;
+}
+
+.tmg-footer a { color: rgba(255,255,255,.70); }
+.tmg-footer a:hover { color: var(--tmg-white); text-decoration: underline; }
+
+/* ── Utility ────────────────────────────────────────────── */
+.mt-1  { margin-top: .5rem; }
+.mt-2  { margin-top: 1rem; }
+.mt-3  { margin-top: 1.5rem; }
+.mb-0  { margin-bottom: 0; }
+.prose p         { margin-bottom: 1rem; }
+.prose p:last-child { margin-bottom: 0; }
+
+/* ── Responsive ─────────────────────────────────────────── */
+@media (max-width: 640px) {
+  .tmg-card { padding: 1.35rem 1.25rem; }
+  .tmg-hero { padding: 2.75rem 1rem 2.5rem; }
+  .tmg-nav__links { gap: 0; }
+  .tmg-nav__links a { padding: .45rem .5rem; }
+}

@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Colorado Snowpack vs ENSO | TMG Analysis</title>
+  <meta name="description"
+        content="Does La Niña actually matter for Colorado snowpack? 46 winters of federal data say barely." />
+  <link rel="stylesheet" href="tmg.css" />
+</head>
+<body>
+
+<!-- ── Navigation ─────────────────────────────────────── -->
+<nav class="tmg-nav" role="navigation" aria-label="Site navigation">
+  <div class="tmg-nav__inner">
+    <a class="tmg-nav__logo" href="https://rmallorybpc.github.io/">TMG&nbsp;Research</a>
+    <ul class="tmg-nav__links">
+      <li><a href="https://github.com/rmallorybpc/colorado-snowpack-enso">Repo</a></li>
+      <li><a href="snowpack_enso_stats.txt">Stats&nbsp;(.txt)</a></li>
+      <li>
+        <div class="tmg-dropdown" id="toolSuite">
+          <button class="tmg-dropdown__toggle"
+                  aria-haspopup="true"
+                  aria-expanded="false"
+                  aria-controls="toolSuiteMenu"
+                  onclick="toggleDropdown('toolSuite')">
+            Tool Suite <span class="tmg-dropdown__arrow">▾</span>
+          </button>
+          <ul class="tmg-dropdown__menu" id="toolSuiteMenu" role="menu">
+            <li role="none"><a href="https://rmallorybpc.github.io/colorado-snowpack-enso/" role="menuitem">Colorado Snowpack&nbsp;× ENSO</a></li>
+            <li role="none"><a href="https://github.com/rmallorybpc" role="menuitem">All TMG Tools</a></li>
+          </ul>
+        </div>
+      </li>
+    </ul>
+  </div>
+</nav>
+
+<!-- ── Hero ───────────────────────────────────────────── -->
+<header class="tmg-hero">
+  <p class="tmg-hero__kicker">TMG Data Analysis · Colorado Snowpack</p>
+  <h1 class="tmg-hero__headline">
+    Does La&nbsp;Niña Actually Matter for Colorado Snowpack?
+  </h1>
+  <p class="tmg-hero__dek">
+    46 winters of federal SNOTEL data and NOAA's Oceanic Niño Index say:
+    barely—and not significantly.
+  </p>
+</header>
+
+<!-- ── Main content ──────────────────────────────────── -->
+<main class="tmg-container" style="padding-top:2.5rem; padding-bottom:2rem;">
+
+  <!-- Key finding card -->
+  <div class="tmg-card">
+    <p class="tmg-section-label">Key finding</p>
+    <h2 class="tmg-card__title">ENSO Phase Does Not Significantly Drive Colorado Snowpack</h2>
+    <div class="tmg-finding">
+      A one-way ANOVA across 46 water years (1979–2024) finds
+      <strong>no statistically significant difference</strong> in April&nbsp;1
+      snow water equivalent (SWE) between El&nbsp;Niño, Neutral, and La&nbsp;Niña
+      years (F&nbsp;=&nbsp;1.18, p&nbsp;=&nbsp;0.32).  While La&nbsp;Niña winters
+      average modestly below median, the variance within each bin swamps any
+      phase signal.
+    </div>
+
+    <!-- Phase pills -->
+    <div class="tmg-phase-grid">
+      <div class="tmg-phase-pill tmg-phase-pill--elnino">
+        <div class="tmg-phase-pill__name">El Niño</div>
+        <div class="tmg-phase-pill__mean">106 %</div>
+        <div class="tmg-phase-pill__detail">Mean April 1 SWE · n = 11 winters</div>
+      </div>
+      <div class="tmg-phase-pill tmg-phase-pill--neutral">
+        <div class="tmg-phase-pill__name">Neutral</div>
+        <div class="tmg-phase-pill__mean">102 %</div>
+        <div class="tmg-phase-pill__detail">Mean April 1 SWE · n = 22 winters</div>
+      </div>
+      <div class="tmg-phase-pill tmg-phase-pill--lanina">
+        <div class="tmg-phase-pill__name">La Niña</div>
+        <div class="tmg-phase-pill__mean">94 %</div>
+        <div class="tmg-phase-pill__detail">Mean April 1 SWE · n = 13 winters</div>
+      </div>
+    </div>
+
+    <!-- Top-line stats -->
+    <div class="tmg-stat-row">
+      <div class="tmg-stat">
+        <span class="tmg-stat__value">46</span>
+        <div class="tmg-stat__label">Water years analyzed<br/>(1979–2024)</div>
+      </div>
+      <div class="tmg-stat">
+        <span class="tmg-stat__value">p = 0.32</span>
+        <div class="tmg-stat__label">One-way ANOVA p-value<br/>(not significant)</div>
+      </div>
+      <div class="tmg-stat">
+        <span class="tmg-stat__value">12 pp</span>
+        <div class="tmg-stat__label">Spread El Niño vs La Niña<br/>(means, % of median)</div>
+      </div>
+      <div class="tmg-stat">
+        <span class="tmg-stat__value">r = 0.14</span>
+        <div class="tmg-stat__label">ONI correlation with SWE<br/>(weak positive)</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Composite chart card -->
+  <div class="tmg-card">
+    <p class="tmg-section-label">4-Panel Composite</p>
+    <h2 class="tmg-card__title">Colorado April 1 SWE × ENSO Phase (1979–2024)</h2>
+    <figure class="tmg-figure">
+      <img src="snowpack_enso_composite.png"
+           alt="Four-panel composite chart: scatter of ONI vs SWE, box plots by ENSO phase, time-series bar chart, and histogram overlays" />
+      <figcaption>
+        Data: NRCS SNOTEL statewide Colorado average ·
+        ENSO phase: NOAA ONI Oct–Mar average ≥ ±0.5 °C threshold ·
+        Dashed horizontal lines mark the 100 % median benchmark.
+      </figcaption>
+    </figure>
+  </div>
+
+  <!-- Per-phase stats table card -->
+  <div class="tmg-card">
+    <p class="tmg-section-label">Per-Phase Statistics</p>
+    <h2 class="tmg-card__title">April 1 SWE Detail by ENSO Phase</h2>
+    <div class="tmg-table-wrap">
+      <table class="tmg-table">
+        <thead>
+          <tr>
+            <th>ENSO Phase</th>
+            <th>n</th>
+            <th>Mean&nbsp;(%)</th>
+            <th>Median&nbsp;(%)</th>
+            <th>Std Dev</th>
+            <th>Range</th>
+            <th>% Below Median</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>El Niño</strong></td>
+            <td>11</td><td>106.1</td><td>108.0</td>
+            <td>28.0</td><td>57–153</td><td>45 %</td>
+          </tr>
+          <tr>
+            <td><strong>Neutral</strong></td>
+            <td>22</td><td>102.1</td><td>101.0</td>
+            <td>20.0</td><td>66–155</td><td>41 %</td>
+          </tr>
+          <tr>
+            <td><strong>La Niña</strong></td>
+            <td>13</td><td>93.5</td><td>93.0</td>
+            <td>15.2</td><td>65–118</td><td>62 %</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="mt-2" style="font-size:.85rem; color:var(--tmg-text-muted);">
+      One-way ANOVA: F&nbsp;=&nbsp;1.18 &nbsp;|&nbsp; p&nbsp;=&nbsp;0.32 &nbsp;(not significant at α = 0.05)
+      &nbsp;·&nbsp; <a href="snowpack_enso_stats.txt">Download full stats (.txt)</a>
+    </p>
+  </div>
+
+  <!-- Methodology card -->
+  <div class="tmg-card">
+    <p class="tmg-section-label">Methodology</p>
+    <h2 class="tmg-card__title">Data Sources &amp; Methods</h2>
+    <div class="prose">
+      <p>
+        <strong>Snowpack data:</strong> NRCS National Water and Climate Center
+        statewide Colorado April&nbsp;1 SWE percent-of-median values, water years
+        1979–2024 (46 winters).  Values represent the statewide average of all
+        active Colorado SNOTEL stations weighted by the 1991–2020 reference period.
+      </p>
+      <p>
+        <strong>ENSO classification:</strong> NOAA Climate Prediction Center
+        Oceanic Niño Index (ONI).  Water-year ENSO phase is determined by the
+        October–March average ONI: El&nbsp;Niño ≥ +0.5 °C, La&nbsp;Niña ≤ −0.5 °C,
+        Neutral otherwise.  This Oct–Mar window covers the core precipitation
+        season for Colorado snowpack accumulation.
+      </p>
+      <p>
+        <strong>Statistics:</strong> One-way ANOVA tests for a mean difference
+        across the three ENSO bins.  Simple linear regression estimates the
+        ONI–SWE correlation.  All analysis is reproducible via
+        <a href="https://github.com/rmallorybpc/colorado-snowpack-enso/blob/main/colorado_snowpack_enso.py"><code>colorado_snowpack_enso.py</code></a>.
+      </p>
+    </div>
+  </div>
+
+  <!-- Interpretation card -->
+  <div class="tmg-card">
+    <p class="tmg-section-label">Interpretation</p>
+    <h2 class="tmg-card__title">Why the Signal Is Weak</h2>
+    <div class="prose">
+      <p>
+        ENSO teleconnections to the American West are strongest in California
+        and the Southwest Desert.  For Colorado's high-country basins, the
+        dominant moisture pathways—Gulf of Mexico moisture surges, Pacific
+        storm tracks deflected by the Rockies, and local orographic
+        enhancement—operate largely independently of tropical Pacific sea-surface
+        temperatures.
+      </p>
+      <p>
+        La&nbsp;Niña does nudge the statewide mean downward (~7 percentage points
+        below El&nbsp;Niño), but the within-phase standard deviations (15–28 pp)
+        swamp that signal.  Individual La&nbsp;Niña winters have ranged from
+        65&nbsp;% to 118&nbsp;% of median.  The 2021–22 La&nbsp;Niña produced
+        below-average snowpack; the 2020–21 La&nbsp;Niña produced well-above-average.
+      </p>
+      <p>
+        Bottom line: ENSO phase alone is a poor predictor of whether Colorado
+        will have a good or bad snow year.  Operational forecasters rely on
+        multi-model seasonal outlooks that incorporate additional teleconnections
+        (AO, PDO, AMO) and subseasonal variability rather than ENSO alone.
+      </p>
+    </div>
+  </div>
+
+</main>
+
+<!-- ── Footer ─────────────────────────────────────────── -->
+<footer class="tmg-footer">
+  <p>
+    Analysis by <a href="https://github.com/rmallorybpc">rmallorybpc</a> ·
+    Data: <a href="https://www.nrcs.usda.gov/wps/portal/wcc/home/">NRCS SNOTEL</a> &amp;
+    <a href="https://origin.cpc.ncep.noaa.gov/products/analysis_monitoring/ensostuff/ONI_v5.php">NOAA CPC ONI</a> ·
+    <a href="https://github.com/rmallorybpc/colorado-snowpack-enso">View on GitHub</a>
+  </p>
+</footer>
+
+<script>
+  // Dropdown toggle
+  function toggleDropdown(id) {
+    var el = document.getElementById(id);
+    var isOpen = el.hasAttribute('data-open');
+    // Close all dropdowns first
+    document.querySelectorAll('.tmg-dropdown[data-open]').forEach(function(d) {
+      d.removeAttribute('data-open');
+      var btn = d.querySelector('.tmg-dropdown__toggle');
+      if (btn) btn.setAttribute('aria-expanded', 'false');
+    });
+    if (!isOpen) {
+      el.setAttribute('data-open', '');
+      var btn = el.querySelector('.tmg-dropdown__toggle');
+      if (btn) btn.setAttribute('aria-expanded', 'true');
+    }
+  }
+
+  // Close dropdowns when clicking outside
+  document.addEventListener('click', function(e) {
+    if (!e.target.closest('.tmg-dropdown')) {
+      document.querySelectorAll('.tmg-dropdown[data-open]').forEach(function(d) {
+        d.removeAttribute('data-open');
+        var btn = d.querySelector('.tmg-dropdown__toggle');
+        if (btn) btn.setAttribute('aria-expanded', 'false');
+      });
+    }
+  });
+</script>
+
+</body>
+</html>
