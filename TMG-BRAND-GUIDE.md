@@ -48,7 +48,7 @@ TMG tool repository so contributors always have the spec at hand.
 | Base unit | 8 px |
 | Card padding | 2 rem × 2.25 rem |
 | Section gap | 2 rem (bottom margin on cards) |
-| Container max-width | 1 100 px |
+| Container max-width | 1100 px |
 | Nav height | 56 px |
 
 ---
