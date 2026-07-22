@@ -1,270 +1,272 @@
 """
-colorado_snowpack_enso.py
--------------------------
-Analyzes 46 winters (1979-2024) of Colorado April 1 SWE (snow water equivalent)
-from NRCS SNOTEL data against ENSO phase classifications from NOAA's Oceanic
-Niño Index (ONI).
+Colorado snowpack vs ENSO: does La Nina actually matter?
 
-Outputs:
-  - snowpack_enso_composite.png  (4-panel composite chart)
-  - snowpack_enso_stats.txt      (per-bin April 1 SWE statistics)
+Pipeline:
+  1. Pull ONI (Oceanic Nino Index) from NOAA CPC and classify each
+     winter since water year 1981 by DJF ONI strength.
+  2. GO/NO-GO GATE: print the season count per ONI bin. If the strong
+     bins have < 4 seasons, that thinness is part of the finding.
+  3. Pull daily snow water equivalent (SWE) from three long-record
+     NRCS SNOTEL stations spanning Colorado's north-south gradient.
+  4. Composite the seasonal SWE accumulation curves by ONI category
+     and plot spaghetti (individual seasons) + category medians.
+  5. Print April 1 SWE stats per bin per station for the post copy.
 
-Usage:
-  pip install pandas numpy matplotlib scipy requests
-  python colorado_snowpack_enso.py
+Run locally:  pip install requests pandas matplotlib
+              python colorado_snowpack_enso.py
+Outputs:      snowpack_enso_composite.png, snowpack_enso_stats.txt
+
+Data sources (all free, public, federal):
+  ONI:    https://www.cpc.ncep.noaa.gov/data/indices/oni.ascii.txt
+  SNOTEL: NRCS AWDB REST API (wcc.sc.egov.usda.gov/awdbRestApi)
 """
 
-import io
-import textwrap
-
-import matplotlib
-matplotlib.use("Agg")  # headless backend for CI / server environments
-
-import matplotlib.pyplot as plt
-import matplotlib.patches as mpatches
-import numpy as np
+import sys
+import requests
 import pandas as pd
-from scipy import stats
+import matplotlib.pyplot as plt
+from datetime import date
 
-# ---------------------------------------------------------------------------
-# 1.  Hardcoded NRCS Colorado statewide April 1 SWE percent-of-median data
-#     Source: NRCS National Water and Climate Center, Colorado Basin reports
-#     https://www.nrcs.usda.gov/wps/portal/wcc/home/quicklinks/isspordssnotel
-#
-#     Values are statewide-average April 1 SWE as % of the 1991-2020 median.
-#     Water years 1979-2024 (46 years).
-# ---------------------------------------------------------------------------
+# ----------------------------------------------------------------------
+# Config
+# ----------------------------------------------------------------------
 
-YEARS = list(range(1979, 2025))
+FIRST_WATER_YEAR = 1981          # SNOTEL records get thin before ~1980
+LAST_WATER_YEAR = 2026           # WY2026 = Oct 2025 - Sep 2026
 
-# April 1 SWE (% of median) for Colorado statewide, WY 1979-2024
-SWE_PCT = [
-    118, 102,  95,  84, 111, 120,  78,  93, 104, 115,   # 1979-1988
-    100,  88,  85,  74, 102,  98, 117, 108,  94,  80,   # 1989-1998
-    107, 155,  98,  57,  84, 100,  96, 118, 127,  87,   # 1999-2008
-     93,  78, 128, 118, 105,  66, 103, 153,  88, 100,   # 2009-2018
-     65, 143, 115,  78, 112,  88,                       # 2019-2024
+# Long-record SNOTEL stations across the north-south gradient.
+# Triplet format is "<station id>:CO:SNTL".
+# VERIFY THESE before trusting output: the script checks each triplet
+# against the AWDB metadata endpoint and will tell you if one is wrong.
+STATIONS = {
+    "825:CO:SNTL": "Tower (Park Range, north / Steamboat)",
+    "335:CO:SNTL": "Berthoud Summit (central Front Range)",
+    "874:CO:SNTL": "Wolf Creek Summit (San Juans, south)",
+}
+
+ONI_URL = "https://www.cpc.ncep.noaa.gov/data/indices/oni.ascii.txt"
+AWDB_BASE = "https://wcc.sc.egov.usda.gov/awdbRestApi/services/v1"
+
+# ONI bins. DJF ONI value -> label. Standard CPC-style thresholds.
+def oni_bin(v):
+    if v <= -1.5:
+        return "Strong La Nina"
+    if v <= -0.5:
+        return "Weak/Moderate La Nina"
+    if v < 0.5:
+        return "Neutral"
+    if v < 1.5:
+        return "Weak/Moderate El Nino"
+    return "Strong El Nino"
+
+BIN_ORDER = [
+    "Strong La Nina",
+    "Weak/Moderate La Nina",
+    "Neutral",
+    "Weak/Moderate El Nino",
+    "Strong El Nino",
 ]
 
-# ---------------------------------------------------------------------------
-# 2.  NOAA Oceanic Niño Index (ONI) → ENSO phase classification
-#     Phase assigned to each water year based on Oct-Mar average ONI.
-#     El Niño  ≥ +0.5  |  La Niña ≤ -0.5  |  Neutral otherwise
-#     Source: https://origin.cpc.ncep.noaa.gov/products/analysis_monitoring/
-#             ensostuff/ONI_v5.php
-# ---------------------------------------------------------------------------
+# Coarse 3-way grouping for the chart (5 medians per panel is clutter).
+def oni_group(v):
+    if v <= -0.5:
+        return "La Nina"
+    if v < 0.5:
+        return "Neutral"
+    return "El Nino"
 
-# Oct-Mar average ONI, WY 1979-2024
-ONI_OCT_MAR = [
-    -0.55, -0.65,  0.35,  0.20, -0.40,  1.00,  0.95,  0.50, -0.15, -0.80,  # 1979-1988
-    -0.05,  0.55,  0.30,  0.25, -0.25,  0.05,  0.45,  1.90,  0.60, -1.10,  # 1989-1998
-    -1.50,  0.45, -0.55,  0.65, -0.65, -0.05, -0.40,  0.80,  0.20, -1.45,  # 1999-2008
-    -1.35,  0.10,  0.30, -0.30,  0.00,  0.40,  0.20,  0.55,  0.10, -0.90,  # 2009-2018
-    -0.60,  1.90,  0.80, -0.85,  0.40, -0.85,                               # 2019-2024
-]
+GROUP_COLORS = {"La Nina": "#1f77b4", "Neutral": "#7f7f7f", "El Nino": "#d62728"}
 
 
-def classify_enso(oni: float) -> str:
-    """Return 'El Niño', 'La Niña', or 'Neutral' from an ONI value."""
-    if oni >= 0.5:
-        return "El Niño"
-    if oni <= -0.5:
-        return "La Niña"
-    return "Neutral"
+# ----------------------------------------------------------------------
+# Step 1: ONI
+# ----------------------------------------------------------------------
+
+def fetch_oni():
+    """Return {water_year: djf_oni_anomaly}.
+
+    In CPC's oni.ascii.txt, the row 'DJF 1999' means Dec 1998 - Feb 1999,
+    which sits inside water year 1999 (Oct 1998 - Sep 1999). So the DJF
+    year label and the water year label already match.
+    """
+    print("Fetching ONI from CPC ...")
+    r = requests.get(ONI_URL, timeout=30)
+    r.raise_for_status()
+    out = {}
+    for line in r.text.splitlines():
+        parts = line.split()
+        if len(parts) == 4 and parts[0] == "DJF":
+            try:
+                yr, anom = int(parts[1]), float(parts[3])
+            except ValueError:
+                continue
+            out[yr] = anom
+    if not out:
+        sys.exit("ONI parse failed. Check the file format at " + ONI_URL)
+    return out
 
 
-def build_dataframe() -> pd.DataFrame:
-    """Assemble the master data frame."""
-    df = pd.DataFrame(
-        {
-            "water_year": YEARS,
-            "swe_pct": SWE_PCT,
-            "oni": ONI_OCT_MAR,
-        }
-    )
-    df["enso_phase"] = df["oni"].apply(classify_enso)
+def print_gate(oni_by_wy):
+    """The go/no-go count: seasons per ONI bin in the study window."""
+    wys = {wy: v for wy, v in oni_by_wy.items()
+           if FIRST_WATER_YEAR <= wy <= LAST_WATER_YEAR}
+    counts = {b: [] for b in BIN_ORDER}
+    for wy, v in sorted(wys.items()):
+        counts[oni_bin(v)].append(wy)
+    print("\n=== GO/NO-GO GATE: seasons per ONI bin, WY%d-WY%d ==="
+          % (FIRST_WATER_YEAR, LAST_WATER_YEAR))
+    for b in BIN_ORDER:
+        yrs = counts[b]
+        flag = "  <-- THIN (n < 4): report this in the post" if len(yrs) < 4 else ""
+        print("  %-24s n=%2d  %s%s" % (b, len(yrs), yrs, flag))
+    print("If a strong bin is thin, the thinness is part of the finding.\n")
+    return wys
+
+
+# ----------------------------------------------------------------------
+# Step 2: SNOTEL
+# ----------------------------------------------------------------------
+
+def verify_stations():
+    """Confirm each station triplet resolves in AWDB metadata."""
+    print("Verifying SNOTEL station triplets ...")
+    triplets = ",".join(STATIONS)
+    r = requests.get(AWDB_BASE + "/stations",
+                     params={"stationTriplets": triplets}, timeout=30)
+    r.raise_for_status()
+    found = {s.get("stationTriplet"): s.get("name") for s in r.json()}
+    for t, label in STATIONS.items():
+        if t in found:
+            print("  OK  %s -> AWDB name: %s" % (t, found[t]))
+        else:
+            print("  MISSING %s (%s). Look up the correct id at the NRCS"
+                  " interactive map, then fix STATIONS above." % (t, label))
+    missing = [t for t in STATIONS if t not in found]
+    if missing:
+        sys.exit("Fix station triplets before continuing: %s" % missing)
+
+
+def fetch_swe(triplet):
+    """Daily SWE (element WTEQ, inches) for one station, full record."""
+    params = {
+        "stationTriplets": triplet,
+        "elements": "WTEQ",
+        "duration": "DAILY",
+        "beginDate": "%d-10-01" % (FIRST_WATER_YEAR - 1),
+        "endDate": "%d-06-30" % LAST_WATER_YEAR,
+    }
+    r = requests.get(AWDB_BASE + "/data", params=params, timeout=120)
+    r.raise_for_status()
+    payload = r.json()
+    rows = []
+    # Expected shape: [{stationTriplet, data: [{stationElement, values:
+    # [{date, value}, ...]}]}]. Written defensively; if AWDB changes its
+    # response shape, print the payload and adjust here.
+    try:
+        for station in payload:
+            for elem in station.get("data", []):
+                for v in elem.get("values", []):
+                    if v.get("value") is not None:
+                        rows.append((v["date"], float(v["value"])))
+    except (TypeError, KeyError) as e:
+        print("Unexpected AWDB response shape (%s). First 500 chars:" % e)
+        print(str(payload)[:500])
+        sys.exit(1)
+    df = pd.DataFrame(rows, columns=["date", "swe"])
+    df["date"] = pd.to_datetime(df["date"])
     return df
 
 
-# ---------------------------------------------------------------------------
-# 3.  Statistics helper
-# ---------------------------------------------------------------------------
+def add_water_year(df):
+    df = df.copy()
+    m = df["date"].dt.month
+    df["wy"] = df["date"].dt.year + (m >= 10).astype(int)
+    # Day of water year: Oct 1 = day 1.
+    start = pd.to_datetime((df["wy"] - 1).astype(str) + "-10-01")
+    df["dowy"] = (df["date"] - start).dt.days + 1
+    # Keep Oct 1 - Jun 30 accumulation season.
+    df = df[(df["dowy"] >= 1) & (df["dowy"] <= 273)]
+    return df
 
 
-def phase_stats(df: pd.DataFrame, phase: str) -> dict:
-    """Return summary stats for one ENSO phase."""
-    sub = df.loc[df["enso_phase"] == phase, "swe_pct"]
-    return {
-        "n": len(sub),
-        "mean": sub.mean(),
-        "median": sub.median(),
-        "std": sub.std(ddof=1),
-        "min": sub.min(),
-        "max": sub.max(),
-        "pct_below_median": (sub < 100).mean() * 100,
-    }
+# ----------------------------------------------------------------------
+# Step 3: composite + chart + stats
+# ----------------------------------------------------------------------
+
+def april1_swe(df_wy):
+    """SWE on/near April 1 (dowy 183) for one station-season frame."""
+    near = df_wy[(df_wy["dowy"] >= 180) & (df_wy["dowy"] <= 186)]
+    return near["swe"].max() if len(near) else None
 
 
-# ---------------------------------------------------------------------------
-# 4.  Write stats text file
-# ---------------------------------------------------------------------------
+def main():
+    oni = fetch_oni()
+    wys = print_gate(oni)
 
-PHASES_ORDER = ["El Niño", "Neutral", "La Niña"]
-PHASE_COLORS = {
-    "El Niño": "#D94F3D",
-    "Neutral": "#6C8EBF",
-    "La Niña": "#4A90A4",
-}
+    verify_stations()
 
+    fig, axes = plt.subplots(1, len(STATIONS), figsize=(15, 5),
+                             sharey=False)
+    if len(STATIONS) == 1:
+        axes = [axes]
 
-def write_stats(df: pd.DataFrame, path: str = "snowpack_enso_stats.txt") -> None:
-    """Write per-bin April 1 SWE statistics to a plain-text file."""
-    lines = [
-        "Colorado Statewide April 1 SWE (% of Median) by ENSO Phase",
-        "Water Years 1979–2024  (N = 46)",
-        "=" * 60,
-        "",
-    ]
-    for phase in PHASES_ORDER:
-        s = phase_stats(df, phase)
-        lines += [
-            f"{phase}  (n = {s['n']})",
-            f"  Mean   : {s['mean']:.1f} %",
-            f"  Median : {s['median']:.1f} %",
-            f"  Std Dev: {s['std']:.1f} %",
-            f"  Range  : {s['min']:.0f} – {s['max']:.0f} %",
-            f"  Below median (< 100 %): {s['pct_below_median']:.0f} %",
-            "",
-        ]
+    stats_lines = []
+    for ax, (triplet, label) in zip(axes, STATIONS.items()):
+        print("Fetching SWE for %s ..." % label)
+        df = add_water_year(fetch_swe(triplet))
+        df = df[df["wy"].isin(wys)]
 
-    # One-way ANOVA across the three groups
-    groups = [df.loc[df["enso_phase"] == p, "swe_pct"].values for p in PHASES_ORDER]
-    f_stat, p_val = stats.f_oneway(*groups)
-    lines += [
-        "One-way ANOVA (El Niño / Neutral / La Niña)",
-        f"  F = {f_stat:.2f},  p = {p_val:.4f}",
-        "",
-        "Interpretation:",
-        "  p > 0.05 → no statistically significant difference in April 1 SWE",
-        "  across ENSO phases for Colorado statewide.  La Niña does not",
-        "  reliably suppress snowpack at the statewide scale.",
-        "",
-    ]
-    text = "\n".join(lines)
-    with open(path, "w", encoding="utf-8") as fh:
-        fh.write(text)
-    print(f"Stats written → {path}")
-    print(text)
+        a1 = {}  # bin -> list of April 1 SWE values
+        for wy, season in df.groupby("wy"):
+            v = wys[wy]
+            grp = oni_group(v)
+            season = season.sort_values("dowy")
+            ax.plot(season["dowy"], season["swe"],
+                    color=GROUP_COLORS[grp], alpha=0.18, lw=0.8)
+            s = april1_swe(season)
+            if s is not None:
+                a1.setdefault(oni_bin(v), []).append((wy, s))
 
+        # Median curve per coarse group.
+        df["grp"] = df["wy"].map(lambda w: oni_group(wys[w]))
+        for grp, g in df.groupby("grp"):
+            med = g.groupby("dowy")["swe"].median()
+            ax.plot(med.index, med.values, color=GROUP_COLORS[grp],
+                    lw=2.5, label="%s median" % grp)
 
-# ---------------------------------------------------------------------------
-# 5.  Build composite chart  (4 panels)
-# ---------------------------------------------------------------------------
+        ax.set_title(label, fontsize=10)
+        ax.set_xlabel("Day of water year (Oct 1 = 1)")
+        ax.set_ylabel("SWE (inches)")
+        ax.legend(fontsize=8)
 
+        stats_lines.append("\n%s (%s)" % (label, triplet))
+        stats_lines.append("  April 1 SWE by ONI bin "
+                           "(median [min-max], n):")
+        for b in BIN_ORDER:
+            vals = sorted(v for _, v in a1.get(b, []))
+            if not vals:
+                stats_lines.append("    %-24s no seasons" % b)
+                continue
+            med = vals[len(vals) // 2]
+            stats_lines.append(
+                "    %-24s %5.1f in  [%5.1f - %5.1f]  n=%d"
+                % (b, med, vals[0], vals[-1], len(vals)))
 
-def plot_composite(df: pd.DataFrame, path: str = "snowpack_enso_composite.png") -> None:
-    """
-    4-panel figure:
-      A – Scatter: ONI vs SWE with regression line
-      B – Box plots by ENSO phase
-      C – Time-series bar chart coloured by ENSO phase
-      D – Histogram / distribution overlay
-    """
-    fig = plt.figure(figsize=(14, 10))
-    fig.patch.set_facecolor("#FDFAF4")
+    fig.suptitle("Colorado SNOTEL snow water equivalent by ENSO state, "
+                 "WY%d-WY%d. Faint lines are individual seasons."
+                 % (FIRST_WATER_YEAR, LAST_WATER_YEAR), fontsize=11)
+    fig.tight_layout()
+    fig.savefig("snowpack_enso_composite.png", dpi=200)
+    print("\nWrote snowpack_enso_composite.png")
 
-    gs = fig.add_gridspec(2, 2, hspace=0.40, wspace=0.32,
-                          left=0.08, right=0.95, top=0.88, bottom=0.10)
-    axes = [fig.add_subplot(gs[r, c]) for r in range(2) for c in range(2)]
-
-    colors = [PHASE_COLORS[df.loc[i, "enso_phase"]] for i in df.index]
-
-    # ---- A: Scatter ONI vs SWE ----
-    ax = axes[0]
-    ax.scatter(df["oni"], df["swe_pct"], c=colors, s=60, alpha=0.85, zorder=3)
-    m, b, r, p, se = stats.linregress(df["oni"], df["swe_pct"])
-    x_line = np.linspace(df["oni"].min(), df["oni"].max(), 100)
-    ax.plot(x_line, m * x_line + b, color="#333333", lw=1.5, ls="--",
-            label=f"r = {r:.2f},  p = {p:.2f}")
-    ax.axhline(100, color="#888888", lw=0.8, ls=":")
-    ax.axvline(0, color="#888888", lw=0.8, ls=":")
-    ax.set_xlabel("Oct–Mar ONI", fontsize=9)
-    ax.set_ylabel("April 1 SWE  (% of median)", fontsize=9)
-    ax.set_title("A.  ONI vs April 1 SWE", fontsize=10, fontweight="bold", loc="left")
-    ax.legend(fontsize=8)
-    ax.set_facecolor("#F8F4EC")
-
-    # ---- B: Box plots ----
-    ax = axes[1]
-    data_by_phase = [df.loc[df["enso_phase"] == p, "swe_pct"].values for p in PHASES_ORDER]
-    bp = ax.boxplot(data_by_phase, patch_artist=True, widths=0.5,
-                    medianprops={"color": "black", "lw": 2})
-    for patch, phase in zip(bp["boxes"], PHASES_ORDER):
-        patch.set_facecolor(PHASE_COLORS[phase])
-        patch.set_alpha(0.8)
-    ax.axhline(100, color="#888888", lw=0.8, ls=":")
-    ax.set_xticks([1, 2, 3])
-    ax.set_xticklabels(["El Niño", "Neutral", "La Niña"], fontsize=9)
-    ax.set_ylabel("April 1 SWE  (% of median)", fontsize=9)
-    ax.set_title("B.  Distribution by ENSO Phase", fontsize=10, fontweight="bold", loc="left")
-    ax.set_facecolor("#F8F4EC")
-
-    # ---- C: Time-series bar chart ----
-    ax = axes[2]
-    ax.bar(df["water_year"], df["swe_pct"], color=colors, alpha=0.85, width=0.8)
-    ax.axhline(100, color="#333333", lw=1.2, ls="--", label="Median (100 %)")
-    ax.set_xlabel("Water Year", fontsize=9)
-    ax.set_ylabel("April 1 SWE  (% of median)", fontsize=9)
-    ax.set_title("C.  April 1 SWE Time Series  (1979–2024)", fontsize=10,
-                 fontweight="bold", loc="left")
-    ax.set_xlim(1978, 2025)
-    patches = [mpatches.Patch(color=PHASE_COLORS[p], label=p) for p in PHASES_ORDER]
-    ax.legend(handles=patches, fontsize=8, ncol=3, loc="upper right")
-    ax.set_facecolor("#F8F4EC")
-
-    # ---- D: Histogram / KDE overlay ----
-    ax = axes[3]
-    bins = np.arange(50, 170, 10)
-    for phase in PHASES_ORDER:
-        sub = df.loc[df["enso_phase"] == phase, "swe_pct"]
-        ax.hist(sub, bins=bins, color=PHASE_COLORS[phase], alpha=0.55,
-                label=f"{phase} (n={len(sub)})", density=True)
-    ax.axvline(100, color="#333333", lw=1.2, ls="--")
-    ax.set_xlabel("April 1 SWE  (% of median)", fontsize=9)
-    ax.set_ylabel("Density", fontsize=9)
-    ax.set_title("D.  SWE Distribution by ENSO Phase", fontsize=10,
-                 fontweight="bold", loc="left")
-    ax.legend(fontsize=8)
-    ax.set_facecolor("#F8F4EC")
-
-    # ---- Figure title ----
-    fig.suptitle(
-        "Colorado Statewide April 1 SWE vs ENSO Phase  |  Water Years 1979–2024",
-        fontsize=13, fontweight="bold", y=0.97,
-        color="#1A1A1A",
-    )
-
-    # ---- Footer ----
-    fig.text(
-        0.5, 0.01,
-        "Data: NRCS SNOTEL statewide Colorado average  ·  ENSO phase: NOAA ONI (Oct–Mar ≥ ±0.5 °C)",
-        ha="center", fontsize=7.5, color="#666666",
-    )
-
-    fig.savefig(path, dpi=150, bbox_inches="tight", facecolor="#FDFAF4")
-    plt.close(fig)
-    print(f"Chart saved → {path}")
-
-
-# ---------------------------------------------------------------------------
-# 6.  Main
-# ---------------------------------------------------------------------------
-
-
-def main() -> None:
-    df = build_dataframe()
-    write_stats(df)
-    plot_composite(df)
+    stats = "\n".join(stats_lines)
+    with open("snowpack_enso_stats.txt", "w") as f:
+        f.write(stats + "\n")
+    print(stats)
+    print("\nWrote snowpack_enso_stats.txt")
+    print("\nUse the April 1 medians and the min-max ranges to fill the"
+          " placeholders in the post draft. The overlap between the"
+          " ranges IS the finding.")
 
 
 if __name__ == "__main__":
