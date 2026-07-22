@@ -6,6 +6,27 @@
   <title>Colorado Snowpack vs ENSO | TMG Analysis</title>
   <meta name="description"
         content="Does La Niña actually matter for Colorado snowpack? 46 winters of federal data say barely." />
+  <style>
+    :root {
+      --tmg-cream:          #FDFAF4;
+      --tmg-cream-dark:     #F3EFE6;
+      --tmg-white:          #FFFFFF;
+      --tmg-navy:           #1B2A3B;
+      --tmg-navy-mid:       #2E4160;
+      --tmg-accent:         #C8512A;
+      --tmg-accent-hover:   #A33E1C;
+      --tmg-text:           #1A1A1A;
+      --tmg-text-muted:     #5A5A5A;
+      --tmg-border:         #DDD8CE;
+      --tmg-shadow:         0 2px 12px rgba(0,0,0,.08);
+      --tmg-shadow-lg:      0 6px 24px rgba(0,0,0,.12);
+      --tmg-radius:         8px;
+      --tmg-radius-lg:      14px;
+      --tmg-font-sans:      "Inter", "Segoe UI", Arial, sans-serif;
+      --tmg-font-serif:     "Georgia", "Times New Roman", serif;
+      --tmg-max-width:      1100px;
+    }
+  </style>
   <link rel="stylesheet" href="tmg.css" />
 </head>
 <body>
@@ -17,39 +38,49 @@
     <ul class="tmg-nav__links">
       <li><a href="https://github.com/rmallorybpc/colorado-snowpack-enso">Repo</a></li>
       <li><a href="snowpack_enso_stats.txt">Stats&nbsp;(.txt)</a></li>
-      <li>
-        <div class="tmg-dropdown" id="toolSuite">
-          <button class="tmg-dropdown__toggle"
-                  aria-haspopup="true"
-                  aria-expanded="false"
-                  aria-controls="toolSuiteMenu"
-                  onclick="toggleDropdown('toolSuite')">
-            Tool Suite <span class="tmg-dropdown__arrow">▾</span>
-          </button>
-          <ul class="tmg-dropdown__menu" id="toolSuiteMenu" role="menu">
-            <li role="none"><a href="https://rmallorybpc.github.io/colorado-snowpack-enso/" role="menuitem">Colorado Snowpack&nbsp;× ENSO</a></li>
-            <li role="none"><a href="https://github.com/rmallorybpc" role="menuitem">All TMG Tools</a></li>
-          </ul>
-        </div>
-      </li>
     </ul>
+    <div class="tmg-dropdown" id="toolSuite">
+      <button class="tmg-dropdown__toggle"
+              aria-haspopup="true"
+              aria-expanded="false"
+              aria-controls="toolSuiteMenu"
+              onclick="toggleDropdown('toolSuite')">
+        Tool Suite <span class="tmg-dropdown__arrow">▾</span>
+      </button>
+      <ul class="tmg-dropdown__menu" id="toolSuiteMenu" role="menu">
+        <li role="none"><a href="https://rmallorybpc.github.io/nhl-free-agency-research/welcome.html" role="menuitem">NHL Free Agency Research</a></li>
+        <li role="none"><a href="https://rmallorybpc.github.io/nflanalysis/dashboard/src/findings.html?season=2022&team_id=PHI" role="menuitem">NFL Analysis</a></li>
+        <li role="none"><a href="https://rmallorybpc.github.io/nba-research-project/" role="menuitem">NBA Supermax Research</a></li>
+        <li role="none"><a href="https://rmallorybpc.github.io/nhl-play-for-contract/" role="menuitem">NHL Play for Contract</a></li>
+        <li role="none"><a href="https://rmallorybpc.github.io/talent-portability-research/" role="menuitem">Talent Portability Research</a></li>
+        <li role="none"><a href="https://rmallorybpc.github.io/external-hire-premium/" role="menuitem">External Hire Premium</a></li>
+        <li role="none"><a href="https://rmallorybpc.github.io/nfl-coach-continuity/" role="menuitem">NFL Coach Continuity</a></li>
+        <li role="none"><a href="https://rmallorybpc.github.io/nhl-reunion/" role="menuitem">NHL Reunion</a></li>
+        <li role="none"><a href="https://rmallorybpc.github.io/colorado-snowpack-enso/" role="menuitem">Colorado ENSO Explorer</a></li>
+        <li role="none"><a href="https://rmallorybpc.github.io/recipes/" role="menuitem">Recipe Book</a></li>
+        <li role="none"><a href="https://rmallorybpc.github.io/pdf-multi-agent-analysis/" role="menuitem">PDF Multi-Agent Analysis</a></li>
+        <li role="none"><a href="https://content-integrity-audit.pages.dev/" role="menuitem">Content Integrity</a></li>
+        <li role="none"><a href="https://rmallorybpc.github.io/housing-market-intel/" role="menuitem">Housing Market Intel</a></li>
+        <li role="none"><a href="https://rmallorybpc.github.io/real-estate-report/" role="menuitem">Real Estate Report</a></li>
+      </ul>
+    </div>
   </div>
 </nav>
 
 <!-- ── Hero ───────────────────────────────────────────── -->
 <header class="tmg-hero">
-  <p class="tmg-hero__kicker">TMG Data Analysis · Colorado Snowpack</p>
-  <h1 class="tmg-hero__headline">
+  <p class="tmg-hero__kicker tmg-eyebrow">TMG Data Analysis · Colorado Snowpack</p>
+  <h1 class="tmg-hero__headline tmg-page-title">
     Does La&nbsp;Niña Actually Matter for Colorado Snowpack?
   </h1>
-  <p class="tmg-hero__dek">
+  <p class="tmg-hero__dek tmg-page-desc">
     46 winters of federal SNOTEL data and NOAA's Oceanic Niño Index say:
     barely—and not significantly.
   </p>
 </header>
 
 <!-- ── Main content ──────────────────────────────────── -->
-<main class="tmg-container" style="padding-top:2.5rem; padding-bottom:2rem;">
+<main class="tmg-page tmg-container" style="padding-top:2.5rem; padding-bottom:2rem;">
 
   <!-- Key finding card -->
   <div class="tmg-card">
@@ -127,13 +158,13 @@
       <table class="tmg-table">
         <thead>
           <tr>
-            <th>ENSO Phase</th>
-            <th>n</th>
-            <th>Mean&nbsp;(%)</th>
-            <th>Median&nbsp;(%)</th>
-            <th>Std Dev</th>
-            <th>Range</th>
-            <th>% Below Median</th>
+            <th scope="col">ENSO Phase</th>
+            <th scope="col">n</th>
+            <th scope="col">Mean&nbsp;(%)</th>
+            <th scope="col">Median&nbsp;(%)</th>
+            <th scope="col">Std Dev</th>
+            <th scope="col">Range</th>
+            <th scope="col">% Below Median</th>
           </tr>
         </thead>
         <tbody>
