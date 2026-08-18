@@ -140,7 +140,24 @@ a:hover { color: var(--tmg-accent-hover); text-decoration: underline; }
 }
 .tmg-dropdown[data-open] .tmg-dropdown__menu { display: block; }
 
-.tmg-dropdown__menu li a {
+.tmg-dropdown__group {
+  margin: 0;
+  padding: .35rem 0;
+}
+.tmg-dropdown__group + .tmg-dropdown__group {
+  border-top: 1px solid var(--tmg-border);
+}
+.tmg-dropdown__group-label {
+  display: block;
+  padding: .35rem 1.1rem .2rem;
+  color: var(--tmg-text-muted);
+  font-size: .68rem;
+  font-weight: 700;
+  letter-spacing: .08em;
+  line-height: 1.2;
+  text-transform: uppercase;
+}
+.tmg-dropdown__group a {
   display: block;
   padding: .55rem 1.1rem;
   color: var(--tmg-text);
@@ -148,7 +165,7 @@ a:hover { color: var(--tmg-accent-hover); text-decoration: underline; }
   font-weight: 500;
   transition: background .15s;
 }
-.tmg-dropdown__menu li a:hover {
+.tmg-dropdown__group a:hover {
   background: var(--tmg-cream-dark);
   text-decoration: none;
 }
