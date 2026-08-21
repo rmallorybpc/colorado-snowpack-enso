@@ -1,0 +1,404 @@
+Target continuity window: WY1981-WY2025 (through 2025-06-30)
+Querying AWDB inventory: https://wcc.sc.egov.usda.gov/awdbRestApi/services/v1/stations params={'stationTriplets': '*:CO:SNTL'}
+Inventory returned 118 stations.
+Sanity check present: 335:CO:SNTL
+Sanity check present: 825:CO:SNTL
+Sanity check present: 874:CO:SNTL
+[  1/118] Pulling April 1 availability for 1344:CO:SNTL | Alta Lakes
+EXCLUDED 1344:CO:SNTL | Alta Lakes | coverage WYn/a-WYn/a | available Apr1 count=0
+  - no non-null April 1 SWE values found
+  - missing April 1 values in WY1981-WY2025: 45 (> 2)
+[  2/118] Pulling April 1 availability for 303:CO:SNTL | Apishapa
+[  3/118] Pulling April 1 availability for 1030:CO:SNTL | Arapaho Ridge
+EXCLUDED 1030:CO:SNTL | Arapaho Ridge | coverage WY2003-WY2025 | available Apr1 count=23
+  - first available April 1 water year is 2003 (> 1981)
+  - missing April 1 values in WY1981-WY2025: 22 (> 2)
+[  4/118] Pulling April 1 availability for 322:CO:SNTL | Bear Lake
+[  5/118] Pulling April 1 availability for 1061:CO:SNTL | Bear River
+EXCLUDED 1061:CO:SNTL | Bear River | coverage WY2005-WY2025 | available Apr1 count=21
+  - first available April 1 water year is 2005 (> 1981)
+  - missing April 1 values in WY1981-WY2025: 24 (> 2)
+[  6/118] Pulling April 1 availability for 327:CO:SNTL | Beartown
+EXCLUDED 327:CO:SNTL | Beartown | coverage WY1983-WY2025 | available Apr1 count=43
+  - first available April 1 water year is 1983 (> 1981)
+[  7/118] Pulling April 1 availability for 1041:CO:SNTL | Beaver Ck Village
+EXCLUDED 1041:CO:SNTL | Beaver Ck Village | coverage WY2004-WY2025 | available Apr1 count=22
+  - first available April 1 water year is 2004 (> 1981)
+  - missing April 1 values in WY1981-WY2025: 23 (> 2)
+[  8/118] Pulling April 1 availability for 335:CO:SNTL | Berthoud Summit
+[  9/118] Pulling April 1 availability for 345:CO:SNTL | Bison Lake
+EXCLUDED 345:CO:SNTL | Bison Lake | coverage WY1986-WY2025 | available Apr1 count=40
+  - first available April 1 water year is 1986 (> 1981)
+  - missing April 1 values in WY1981-WY2025: 5 (> 2)
+[ 10/118] Pulling April 1 availability for 1185:CO:SNTL | Black Mesa
+EXCLUDED 1185:CO:SNTL | Black Mesa | coverage WY2013-WY2025 | available Apr1 count=13
+  - first available April 1 water year is 2013 (> 1981)
+  - missing April 1 values in WY1981-WY2025: 32 (> 2)
+[ 11/118] Pulling April 1 availability for 1161:CO:SNTL | Black Mountain
+EXCLUDED 1161:CO:SNTL | Black Mountain | coverage WY2011-WY2025 | available Apr1 count=15
+  - first available April 1 water year is 2011 (> 1981)
+  - missing April 1 values in WY1981-WY2025: 30 (> 2)
+[ 12/118] Pulling April 1 availability for 369:CO:SNTL | Brumley
+[ 13/118] Pulling April 1 availability for 938:CO:SNTL | Buckskin Joe
+EXCLUDED 938:CO:SNTL | Buckskin Joe | coverage WY2000-WY2025 | available Apr1 count=26
+  - first available April 1 water year is 2000 (> 1981)
+  - missing April 1 values in WY1981-WY2025: 19 (> 2)
+[ 14/118] Pulling April 1 availability for 913:CO:SNTL | Buffalo Park
+EXCLUDED 913:CO:SNTL | Buffalo Park | coverage WY1996-WY2025 | available Apr1 count=30
+  - first available April 1 water year is 1996 (> 1981)
+  - missing April 1 values in WY1981-WY2025: 15 (> 2)
+[ 15/118] Pulling April 1 availability for 378:CO:SNTL | Burro Mountain
+[ 16/118] Pulling April 1 availability for 380:CO:SNTL | Butte
+[ 17/118] Pulling April 1 availability for 387:CO:SNTL | Cascade #2
+EXCLUDED 387:CO:SNTL | Cascade #2 | coverage WY1991-WY2025 | available Apr1 count=35
+  - first available April 1 water year is 1991 (> 1981)
+  - missing April 1 values in WY1981-WY2025: 10 (> 2)
+[ 18/118] Pulling April 1 availability for 1326:CO:SNTL | Castle Peak
+EXCLUDED 1326:CO:SNTL | Castle Peak | coverage WY2025-WY2025 | available Apr1 count=1
+  - first available April 1 water year is 2025 (> 1981)
+  - missing April 1 values in WY1981-WY2025: 44 (> 2)
+[ 19/118] Pulling April 1 availability for 1101:CO:SNTL | Chapman Tunnel
+EXCLUDED 1101:CO:SNTL | Chapman Tunnel | coverage WY2008-WY2025 | available Apr1 count=18
+  - first available April 1 water year is 2008 (> 1981)
+  - missing April 1 values in WY1981-WY2025: 27 (> 2)
+[ 20/118] Pulling April 1 availability for 1059:CO:SNTL | Cochetopa Pass
+EXCLUDED 1059:CO:SNTL | Cochetopa Pass | coverage WY2005-WY2025 | available Apr1 count=21
+  - first available April 1 water year is 2005 (> 1981)
+  - missing April 1 values in WY1981-WY2025: 24 (> 2)
+[ 21/118] Pulling April 1 availability for 408:CO:SNTL | Columbine
+[ 22/118] Pulling April 1 availability for 409:CO:SNTL | Columbine Pass
+EXCLUDED 409:CO:SNTL | Columbine Pass | coverage WY1987-WY2025 | available Apr1 count=39
+  - first available April 1 water year is 1987 (> 1981)
+  - missing April 1 values in WY1981-WY2025: 6 (> 2)
+[ 23/118] Pulling April 1 availability for 904:CO:SNTL | Columbus Basin
+EXCLUDED 904:CO:SNTL | Columbus Basin | coverage WY1995-WY2025 | available Apr1 count=31
+  - first available April 1 water year is 1995 (> 1981)
+  - missing April 1 values in WY1981-WY2025: 14 (> 2)
+[ 24/118] Pulling April 1 availability for 412:CO:SNTL | Copeland Lake
+[ 25/118] Pulling April 1 availability for 415:CO:SNTL | Copper Mountain
+[ 26/118] Pulling April 1 availability for 426:CO:SNTL | Crosho
+EXCLUDED 426:CO:SNTL | Crosho | coverage WY1987-WY2025 | available Apr1 count=39
+  - first available April 1 water year is 1987 (> 1981)
+  - missing April 1 values in WY1981-WY2025: 6 (> 2)
+[ 27/118] Pulling April 1 availability for 430:CO:SNTL | Culebra #2
+[ 28/118] Pulling April 1 availability for 431:CO:SNTL | Cumbres Trestle
+[ 29/118] Pulling April 1 availability for 438:CO:SNTL | Deadman Hill
+[ 30/118] Pulling April 1 availability for 457:CO:SNTL | Dry Lake
+[ 31/118] Pulling April 1 availability for 936:CO:SNTL | Echo Lake
+EXCLUDED 936:CO:SNTL | Echo Lake | coverage WY1999-WY2025 | available Apr1 count=27
+  - first available April 1 water year is 1999 (> 1981)
+  - missing April 1 values in WY1981-WY2025: 18 (> 2)
+[ 32/118] Pulling April 1 availability for 465:CO:SNTL | El Diente Peak
+EXCLUDED 465:CO:SNTL | El Diente Peak | coverage WY1987-WY2025 | available Apr1 count=39
+  - first available April 1 water year is 1987 (> 1981)
+  - missing April 1 values in WY1981-WY2025: 6 (> 2)
+[ 33/118] Pulling April 1 availability for 467:CO:SNTL | Elk River
+[ 34/118] Pulling April 1 availability for 1252:CO:SNTL | Elkhead Divide
+EXCLUDED 1252:CO:SNTL | Elkhead Divide | coverage WY2017-WY2025 | available Apr1 count=9
+  - first available April 1 water year is 2017 (> 1981)
+  - missing April 1 values in WY1981-WY2025: 36 (> 2)
+[ 35/118] Pulling April 1 availability for 1120:CO:SNTL | Elliot Ridge
+EXCLUDED 1120:CO:SNTL | Elliot Ridge | coverage WY2010-WY2025 | available Apr1 count=16
+  - first available April 1 water year is 2010 (> 1981)
+  - missing April 1 values in WY1981-WY2025: 29 (> 2)
+[ 36/118] Pulling April 1 availability for 1325:CO:SNTL | Elwood Pass
+EXCLUDED 1325:CO:SNTL | Elwood Pass | coverage WY2025-WY2025 | available Apr1 count=1
+  - first available April 1 water year is 2025 (> 1981)
+  - missing April 1 values in WY1981-WY2025: 44 (> 2)
+[ 37/118] Pulling April 1 availability for 1186:CO:SNTL | Fool Creek
+EXCLUDED 1186:CO:SNTL | Fool Creek | coverage WY2012-WY2025 | available Apr1 count=14
+  - first available April 1 water year is 2012 (> 1981)
+  - missing April 1 values in WY1981-WY2025: 31 (> 2)
+[ 38/118] Pulling April 1 availability for 485:CO:SNTL | Fremont Pass
+[ 39/118] Pulling April 1 availability for 1057:CO:SNTL | Glen Cove
+EXCLUDED 1057:CO:SNTL | Glen Cove | coverage WY2005-WY2025 | available Apr1 count=21
+  - first available April 1 water year is 2005 (> 1981)
+  - missing April 1 values in WY1981-WY2025: 24 (> 2)
+[ 40/118] Pulling April 1 availability for 1058:CO:SNTL | Grayback
+EXCLUDED 1058:CO:SNTL | Grayback | coverage WY2005-WY2025 | available Apr1 count=21
+  - first available April 1 water year is 2005 (> 1981)
+  - missing April 1 values in WY1981-WY2025: 24 (> 2)
+[ 41/118] Pulling April 1 availability for 505:CO:SNTL | Grizzly Peak
+[ 42/118] Pulling April 1 availability for 1102:CO:SNTL | Hayden Pass
+EXCLUDED 1102:CO:SNTL | Hayden Pass | coverage WY2008-WY2025 | available Apr1 count=18
+  - first available April 1 water year is 2008 (> 1981)
+  - missing April 1 values in WY1981-WY2025: 27 (> 2)
+[ 43/118] Pulling April 1 availability for 1187:CO:SNTL | High Lonesome
+EXCLUDED 1187:CO:SNTL | High Lonesome | coverage WY2014-WY2025 | available Apr1 count=12
+  - first available April 1 water year is 2014 (> 1981)
+  - missing April 1 values in WY1981-WY2025: 33 (> 2)
+[ 44/118] Pulling April 1 availability for 531:CO:SNTL | Hoosier Pass
+[ 45/118] Pulling April 1 availability for 1122:CO:SNTL | Hourglass Lake
+EXCLUDED 1122:CO:SNTL | Hourglass Lake | coverage WY2009-WY2025 | available Apr1 count=17
+  - first available April 1 water year is 2009 (> 1981)
+  - missing April 1 values in WY1981-WY2025: 28 (> 2)
+[ 46/118] Pulling April 1 availability for 538:CO:SNTL | Idarado
+[ 47/118] Pulling April 1 availability for 542:CO:SNTL | Independence Pass
+[ 48/118] Pulling April 1 availability for 547:CO:SNTL | Ivanhoe
+EXCLUDED 547:CO:SNTL | Ivanhoe | coverage WY1992-WY2025 | available Apr1 count=34
+  - first available April 1 water year is 1992 (> 1981)
+  - missing April 1 values in WY1981-WY2025: 11 (> 2)
+[ 49/118] Pulling April 1 availability for 935:CO:SNTL | Jackwhacker Gulch
+EXCLUDED 935:CO:SNTL | Jackwhacker Gulch | coverage WY1999-WY2025 | available Apr1 count=27
+  - first available April 1 water year is 1999 (> 1981)
+  - missing April 1 values in WY1981-WY2025: 18 (> 2)
+[ 50/118] Pulling April 1 availability for 551:CO:SNTL | Joe Wright
+[ 51/118] Pulling April 1 availability for 970:CO:SNTL | Jones Pass
+EXCLUDED 970:CO:SNTL | Jones Pass | coverage WY2000-WY2025 | available Apr1 count=26
+  - first available April 1 water year is 2000 (> 1981)
+  - missing April 1 values in WY1981-WY2025: 19 (> 2)
+[ 52/118] Pulling April 1 availability for 556:CO:SNTL | Kiln
+[ 53/118] Pulling April 1 availability for 564:CO:SNTL | Lake Eldora
+[ 54/118] Pulling April 1 availability for 565:CO:SNTL | Lake Irene
+[ 55/118] Pulling April 1 availability for 580:CO:SNTL | Lily Pond
+[ 56/118] Pulling April 1 availability for 586:CO:SNTL | Lizard Head Pass
+[ 57/118] Pulling April 1 availability for 589:CO:SNTL | Lone Cone
+[ 58/118] Pulling April 1 availability for 1123:CO:SNTL | Long Draw Resv
+EXCLUDED 1123:CO:SNTL | Long Draw Resv | coverage WY2010-WY2025 | available Apr1 count=16
+  - first available April 1 water year is 2010 (> 1981)
+  - missing April 1 values in WY1981-WY2025: 29 (> 2)
+[ 59/118] Pulling April 1 availability for 940:CO:SNTL | Lost Dog
+EXCLUDED 940:CO:SNTL | Lost Dog | coverage WY1999-WY2025 | available Apr1 count=27
+  - first available April 1 water year is 1999 (> 1981)
+  - missing April 1 values in WY1981-WY2025: 18 (> 2)
+[ 60/118] Pulling April 1 availability for 602:CO:SNTL | Loveland Basin
+EXCLUDED 602:CO:SNTL | Loveland Basin | coverage WY1993-WY2025 | available Apr1 count=33
+  - first available April 1 water year is 1993 (> 1981)
+  - missing April 1 values in WY1981-WY2025: 12 (> 2)
+[ 61/118] Pulling April 1 availability for 607:CO:SNTL | Lynx Pass
+[ 62/118] Pulling April 1 availability for 905:CO:SNTL | Mancos
+EXCLUDED 905:CO:SNTL | Mancos | coverage WY1995-WY2025 | available Apr1 count=31
+  - first available April 1 water year is 1995 (> 1981)
+  - missing April 1 values in WY1981-WY2025: 14 (> 2)
+[ 63/118] Pulling April 1 availability for 618:CO:SNTL | Mc Clure Pass
+[ 64/118] Pulling April 1 availability for 1040:CO:SNTL | Mccoy Park
+EXCLUDED 1040:CO:SNTL | Mccoy Park | coverage WY2003-WY2025 | available Apr1 count=23
+  - first available April 1 water year is 2003 (> 1981)
+  - missing April 1 values in WY1981-WY2025: 22 (> 2)
+[ 65/118] Pulling April 1 availability for 914:CO:SNTL | Medano Pass
+EXCLUDED 914:CO:SNTL | Medano Pass | coverage WY1996-WY2025 | available Apr1 count=30
+  - first available April 1 water year is 1996 (> 1981)
+  - missing April 1 values in WY1981-WY2025: 15 (> 2)
+[ 66/118] Pulling April 1 availability for 622:CO:SNTL | Mesa Lakes
+EXCLUDED 622:CO:SNTL | Mesa Lakes | coverage WY1987-WY2025 | available Apr1 count=39
+  - first available April 1 water year is 1987 (> 1981)
+  - missing April 1 values in WY1981-WY2025: 6 (> 2)
+[ 67/118] Pulling April 1 availability for 937:CO:SNTL | Michigan Creek
+EXCLUDED 937:CO:SNTL | Michigan Creek | coverage WY1999-WY2025 | available Apr1 count=27
+  - first available April 1 water year is 1999 (> 1981)
+  - missing April 1 values in WY1981-WY2025: 18 (> 2)
+[ 68/118] Pulling April 1 availability for 624:CO:SNTL | Middle Creek
+[ 69/118] Pulling April 1 availability for 1014:CO:SNTL | Middle Fork Camp
+EXCLUDED 1014:CO:SNTL | Middle Fork Camp | coverage WY2002-WY2025 | available Apr1 count=24
+  - first available April 1 water year is 2002 (> 1981)
+  - missing April 1 values in WY1981-WY2025: 21 (> 2)
+[ 70/118] Pulling April 1 availability for 629:CO:SNTL | Mineral Creek
+[ 71/118] Pulling April 1 availability for 632:CO:SNTL | Molas Lake
+EXCLUDED 632:CO:SNTL | Molas Lake | coverage WY1987-WY2025 | available Apr1 count=39
+  - first available April 1 water year is 1987 (> 1981)
+  - missing April 1 values in WY1981-WY2025: 6 (> 2)
+[ 72/118] Pulling April 1 availability for 1124:CO:SNTL | Moon Pass
+EXCLUDED 1124:CO:SNTL | Moon Pass | coverage WY2009-WY2025 | available Apr1 count=17
+  - first available April 1 water year is 2009 (> 1981)
+  - missing April 1 values in WY1981-WY2025: 28 (> 2)
+[ 73/118] Pulling April 1 availability for 658:CO:SNTL | Nast Lake
+EXCLUDED 658:CO:SNTL | Nast Lake | coverage WY1986-WY2025 | available Apr1 count=40
+  - first available April 1 water year is 1986 (> 1981)
+  - missing April 1 values in WY1981-WY2025: 5 (> 2)
+[ 74/118] Pulling April 1 availability for 1031:CO:SNTL | Never Summer
+EXCLUDED 1031:CO:SNTL | Never Summer | coverage WY2003-WY2025 | available Apr1 count=23
+  - first available April 1 water year is 2003 (> 1981)
+  - missing April 1 values in WY1981-WY2025: 22 (> 2)
+[ 75/118] Pulling April 1 availability for 663:CO:SNTL | Niwot
+[ 76/118] Pulling April 1 availability for 669:CO:SNTL | North Lost Trail
+EXCLUDED 669:CO:SNTL | North Lost Trail | coverage WY1986-WY2025 | available Apr1 count=40
+  - first available April 1 water year is 1986 (> 1981)
+  - missing April 1 values in WY1981-WY2025: 5 (> 2)
+[ 77/118] Pulling April 1 availability for 675:CO:SNTL | Overland Res.
+EXCLUDED 675:CO:SNTL | Overland Res. | coverage WY1990-WY2025 | available Apr1 count=36
+  - first available April 1 water year is 1990 (> 1981)
+  - missing April 1 values in WY1981-WY2025: 9 (> 2)
+[ 78/118] Pulling April 1 availability for 680:CO:SNTL | Park Cone
+[ 79/118] Pulling April 1 availability for 682:CO:SNTL | Park Reservoir
+[ 80/118] Pulling April 1 availability for 688:CO:SNTL | Phantom Valley
+[ 81/118] Pulling April 1 availability for 701:CO:SNTL | Porphyry Creek
+[ 82/118] Pulling April 1 availability for 709:CO:SNTL | Rabbit Ears
+EXCLUDED 709:CO:SNTL | Rabbit Ears | coverage WY1987-WY2025 | available Apr1 count=39
+  - first available April 1 water year is 1987 (> 1981)
+  - missing April 1 values in WY1981-WY2025: 6 (> 2)
+[ 83/118] Pulling April 1 availability for 1324:CO:SNTL | Rat Creek
+EXCLUDED 1324:CO:SNTL | Rat Creek | coverage WY2025-WY2025 | available Apr1 count=1
+  - first available April 1 water year is 2025 (> 1981)
+  - missing April 1 values in WY1981-WY2025: 44 (> 2)
+[ 84/118] Pulling April 1 availability for 1032:CO:SNTL | Rawah
+EXCLUDED 1032:CO:SNTL | Rawah | coverage WY2003-WY2025 | available Apr1 count=23
+  - first available April 1 water year is 2003 (> 1981)
+  - missing April 1 values in WY1981-WY2025: 22 (> 2)
+[ 85/118] Pulling April 1 availability for 713:CO:SNTL | Red Mountain Pass
+[ 86/118] Pulling April 1 availability for 717:CO:SNTL | Ripple Creek
+EXCLUDED 717:CO:SNTL | Ripple Creek | coverage WY1987-WY2025 | available Apr1 count=39
+  - first available April 1 water year is 1987 (> 1981)
+  - missing April 1 values in WY1981-WY2025: 6 (> 2)
+[ 87/118] Pulling April 1 availability for 718:CO:SNTL | Roach
+[ 88/118] Pulling April 1 availability for 939:CO:SNTL | Rough And Tumble
+EXCLUDED 939:CO:SNTL | Rough And Tumble | coverage WY1999-WY2025 | available Apr1 count=27
+  - first available April 1 water year is 1999 (> 1981)
+  - missing April 1 values in WY1981-WY2025: 18 (> 2)
+[ 89/118] Pulling April 1 availability for 1100:CO:SNTL | Saint Elmo
+EXCLUDED 1100:CO:SNTL | Saint Elmo | coverage WY2008-WY2025 | available Apr1 count=18
+  - first available April 1 water year is 2008 (> 1981)
+  - missing April 1 values in WY1981-WY2025: 27 (> 2)
+[ 90/118] Pulling April 1 availability for 1128:CO:SNTL | Sargents Mesa
+EXCLUDED 1128:CO:SNTL | Sargents Mesa | coverage WY2009-WY2025 | available Apr1 count=17
+  - first available April 1 water year is 2009 (> 1981)
+  - missing April 1 values in WY1981-WY2025: 28 (> 2)
+[ 91/118] Pulling April 1 availability for 1251:CO:SNTL | Sawtooth
+EXCLUDED 1251:CO:SNTL | Sawtooth | coverage WY2015-WY2025 | available Apr1 count=11
+  - first available April 1 water year is 2015 (> 1981)
+  - missing April 1 values in WY1981-WY2025: 34 (> 2)
+[ 92/118] Pulling April 1 availability for 737:CO:SNTL | Schofield Pass
+EXCLUDED 737:CO:SNTL | Schofield Pass | coverage WY1986-WY2025 | available Apr1 count=40
+  - first available April 1 water year is 1986 (> 1981)
+  - missing April 1 values in WY1981-WY2025: 5 (> 2)
+[ 93/118] Pulling April 1 availability for 739:CO:SNTL | Scotch Creek
+EXCLUDED 739:CO:SNTL | Scotch Creek | coverage WY1987-WY2025 | available Apr1 count=39
+  - first available April 1 water year is 1987 (> 1981)
+  - missing April 1 values in WY1981-WY2025: 6 (> 2)
+[ 94/118] Pulling April 1 availability for 1060:CO:SNTL | Sharkstooth
+EXCLUDED 1060:CO:SNTL | Sharkstooth | coverage WY2005-WY2025 | available Apr1 count=21
+  - first available April 1 water year is 2005 (> 1981)
+  - missing April 1 values in WY1981-WY2025: 24 (> 2)
+[ 95/118] Pulling April 1 availability for 762:CO:SNTL | Slumgullion
+[ 96/118] Pulling April 1 availability for 773:CO:SNTL | South Colony
+EXCLUDED 773:CO:SNTL | South Colony | coverage WY1992-WY2025 | available Apr1 count=34
+  - first available April 1 water year is 1992 (> 1981)
+  - missing April 1 values in WY1981-WY2025: 11 (> 2)
+[ 97/118] Pulling April 1 availability for 780:CO:SNTL | Spud Mountain
+EXCLUDED 780:CO:SNTL | Spud Mountain | coverage WY1987-WY2025 | available Apr1 count=39
+  - first available April 1 water year is 1987 (> 1981)
+  - missing April 1 values in WY1981-WY2025: 6 (> 2)
+[ 98/118] Pulling April 1 availability for 793:CO:SNTL | Stillwater Creek
+EXCLUDED 793:CO:SNTL | Stillwater Creek | coverage WY1986-WY2025 | available Apr1 count=40
+  - first available April 1 water year is 1986 (> 1981)
+  - missing April 1 values in WY1981-WY2025: 5 (> 2)
+[ 99/118] Pulling April 1 availability for 797:CO:SNTL | Stump Lakes
+EXCLUDED 797:CO:SNTL | Stump Lakes | coverage WY1987-WY2025 | available Apr1 count=39
+  - first available April 1 water year is 1987 (> 1981)
+  - missing April 1 values in WY1981-WY2025: 6 (> 2)
+[100/118] Pulling April 1 availability for 802:CO:SNTL | Summit Ranch
+[101/118] Pulling April 1 availability for 825:CO:SNTL | Tower
+[102/118] Pulling April 1 availability for 827:CO:SNTL | Trapper Lake
+EXCLUDED 827:CO:SNTL | Trapper Lake | coverage WY1986-WY2025 | available Apr1 count=40
+  - first available April 1 water year is 1986 (> 1981)
+  - missing April 1 values in WY1981-WY2025: 5 (> 2)
+[103/118] Pulling April 1 availability for 829:CO:SNTL | Trinchera
+EXCLUDED 829:CO:SNTL | Trinchera | coverage WY1990-WY2025 | available Apr1 count=36
+  - first available April 1 water year is 1990 (> 1981)
+  - missing April 1 values in WY1981-WY2025: 9 (> 2)
+[104/118] Pulling April 1 availability for 838:CO:SNTL | University Camp
+[105/118] Pulling April 1 availability for 839:CO:SNTL | Upper Rio Grande
+EXCLUDED 839:CO:SNTL | Upper Rio Grande | coverage WY1987-WY2025 | available Apr1 count=39
+  - first available April 1 water year is 1987 (> 1981)
+  - missing April 1 values in WY1981-WY2025: 6 (> 2)
+[106/118] Pulling April 1 availability for 840:CO:SNTL | Upper San Juan
+[107/118] Pulling April 1 availability for 1141:CO:SNTL | Upper Taylor
+EXCLUDED 1141:CO:SNTL | Upper Taylor | coverage WY2010-WY2025 | available Apr1 count=16
+  - first available April 1 water year is 2010 (> 1981)
+  - missing April 1 values in WY1981-WY2025: 29 (> 2)
+[108/118] Pulling April 1 availability for 1005:CO:SNTL | Ute Creek
+EXCLUDED 1005:CO:SNTL | Ute Creek | coverage WY2001-WY2025 | available Apr1 count=25
+  - first available April 1 water year is 2001 (> 1981)
+  - missing April 1 values in WY1981-WY2025: 20 (> 2)
+[109/118] Pulling April 1 availability for 842:CO:SNTL | Vail Mountain
+[110/118] Pulling April 1 availability for 843:CO:SNTL | Vallecito
+EXCLUDED 843:CO:SNTL | Vallecito | coverage WY1987-WY2025 | available Apr1 count=39
+  - first available April 1 water year is 1987 (> 1981)
+  - missing April 1 values in WY1981-WY2025: 6 (> 2)
+[111/118] Pulling April 1 availability for 1188:CO:SNTL | Wager Gulch
+EXCLUDED 1188:CO:SNTL | Wager Gulch | coverage WY2012-WY2025 | available Apr1 count=14
+  - first available April 1 water year is 2012 (> 1981)
+  - missing April 1 values in WY1981-WY2025: 31 (> 2)
+[112/118] Pulling April 1 availability for 1160:CO:SNTL | Weminuche Creek
+EXCLUDED 1160:CO:SNTL | Weminuche Creek | coverage WY2011-WY2025 | available Apr1 count=15
+  - first available April 1 water year is 2011 (> 1981)
+  - missing April 1 values in WY1981-WY2025: 30 (> 2)
+[113/118] Pulling April 1 availability for 857:CO:SNTL | Whiskey Ck
+[114/118] Pulling April 1 availability for 1042:CO:SNTL | Wild Basin
+EXCLUDED 1042:CO:SNTL | Wild Basin | coverage WY2006-WY2025 | available Apr1 count=20
+  - first available April 1 water year is 2006 (> 1981)
+  - missing April 1 values in WY1981-WY2025: 25 (> 2)
+[115/118] Pulling April 1 availability for 869:CO:SNTL | Willow Creek Pass
+[116/118] Pulling April 1 availability for 870:CO:SNTL | Willow Park
+[117/118] Pulling April 1 availability for 874:CO:SNTL | Wolf Creek Summit
+EXCLUDED 874:CO:SNTL | Wolf Creek Summit | coverage WY1987-WY2025 | available Apr1 count=39
+  - first available April 1 water year is 1987 (> 1981)
+  - missing April 1 values in WY1981-WY2025: 6 (> 2)
+[118/118] Pulling April 1 availability for 1033:CO:SNTL | Zirkel
+EXCLUDED 1033:CO:SNTL | Zirkel | coverage WY2003-WY2025 | available Apr1 count=23
+  - first available April 1 water year is 2003 (> 1981)
+  - missing April 1 values in WY1981-WY2025: 22 (> 2)
+Sanity check station passes filter: 335:CO:SNTL
+Sanity check station passes filter: 825:CO:SNTL
+Sanity check station fails filter: 874:CO:SNTL
+
+Latitude band boundaries (computed):
+  south: lat < 38.308480
+  central: 38.308480 <= lat < 39.598190
+  north: lat >= 39.598190
+
+Survivor count by latitude band:
+  north: 22
+  central: 11
+  south: 13
+
+Wrote stations_candidate.json with 46 stations.
+
+Summary table (north to south):
+triplet          name                                region    elev_ft  coverage      
+------------------------------------------------------------------------------------------
+718:CO:SNTL      Roach                               north        9710  WY1981-WY2025 
+467:CO:SNTL      Elk River                           north        8710  WY1979-WY2025 
+438:CO:SNTL      Deadman Hill                        north       10240  WY1979-WY2025 
+825:CO:SNTL      Tower                               north       10610  WY1980-WY2025 
+457:CO:SNTL      Dry Lake                            north        8240  WY1981-WY2025 
+551:CO:SNTL      Joe Wright                          north       10140  WY1980-WY2025 
+870:CO:SNTL      Willow Park                         north       10710  WY1981-WY2025 
+565:CO:SNTL      Lake Irene                          north       10680  WY1980-WY2025 
+688:CO:SNTL      Phantom Valley                      north        9030  WY1981-WY2025 
+408:CO:SNTL      Columbine                           north        9170  WY1981-WY2025 
+869:CO:SNTL      Willow Creek Pass                   north        9520  WY1979-WY2025 
+322:CO:SNTL      Bear Lake                           north        9490  WY1981-WY2025 
+412:CO:SNTL      Copeland Lake                       north        8570  WY1981-WY2025 
+607:CO:SNTL      Lynx Pass                           north        8910  WY1981-WY2025 
+663:CO:SNTL      Niwot                               north        9940  WY1981-WY2025 
+838:CO:SNTL      University Camp                     north       10330  WY1980-WY2025 
+564:CO:SNTL      Lake Eldora                         north        9700  WY1979-WY2025 
+378:CO:SNTL      Burro Mountain                      north        9290  WY1981-WY2025 
+335:CO:SNTL      Berthoud Summit                     north       11300  WY1979-WY2025 
+802:CO:SNTL      Summit Ranch                        north        9350  WY1981-WY2025 
+505:CO:SNTL      Grizzly Peak                        north       11110  WY1981-WY2025 
+842:CO:SNTL      Vail Mountain                       north       10290  WY1979-WY2025 
+415:CO:SNTL      Copper Mountain                     central     10500  WY1979-WY2025 
+485:CO:SNTL      Fremont Pass                        central     11310  WY1981-WY2025 
+531:CO:SNTL      Hoosier Pass                        central     11600  WY1981-WY2025 
+556:CO:SNTL      Kiln                                central      9610  WY1981-WY2025 
+618:CO:SNTL      Mc Clure Pass                       central      8760  WY1981-WY2025 
+369:CO:SNTL      Brumley                             central     10570  WY1981-WY2025 
+542:CO:SNTL      Independence Pass                   central     10570  WY1981-WY2025 
+682:CO:SNTL      Park Reservoir                      central      9990  WY1979-WY2025 
+380:CO:SNTL      Butte                               central     10190  WY1981-WY2025 
+680:CO:SNTL      Park Cone                           central      9600  WY1981-WY2025 
+701:CO:SNTL      Porphyry Creek                      central     10790  WY1979-WY2025 
+762:CO:SNTL      Slumgullion                         south       11560  WY1981-WY2025 
+538:CO:SNTL      Idarado                             south        9780  WY1981-WY2025 
+589:CO:SNTL      Lone Cone                           south        9730  WY1981-WY2025 
+713:CO:SNTL      Red Mountain Pass                   south       11060  WY1981-WY2025 
+629:CO:SNTL      Mineral Creek                       south       10030  WY1979-WY2025 
+586:CO:SNTL      Lizard Head Pass                    south       10190  WY1981-WY2025 
+624:CO:SNTL      Middle Creek                        south       11260  WY1981-WY2025 
+840:CO:SNTL      Upper San Juan                      south       10140  WY1979-WY2025 
+580:CO:SNTL      Lily Pond                           south       11070  WY1981-WY2025 
+303:CO:SNTL      Apishapa                            south       10000  WY1981-WY2025 
+857:CO:SNTL      Whiskey Ck                          south       10260  WY1981-WY2025 
+430:CO:SNTL      Culebra #2                          south       10560  WY1980-WY2025 
+431:CO:SNTL      Cumbres Trestle                     south       10030  WY1981-WY2025 
