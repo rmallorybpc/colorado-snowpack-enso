@@ -21,7 +21,6 @@ Data sources (all free, public, federal):
   SNOTEL: NRCS AWDB REST API (wcc.sc.egov.usda.gov/awdbRestApi)
 """
 
-import json
 import sys
 import requests
 import pandas as pd
@@ -265,50 +264,6 @@ def main():
         f.write(stats + "\n")
     print(stats)
     print("\nWrote snowpack_enso_stats.txt")
-
-    page_stats = {
-        "n_total": 46,
-        "year_start": 1979,
-        "year_end": 2024,
-        "anova_f": 1.18,
-        "anova_p": 0.32,
-        "pearson_r": 0.27,
-        "pearson_p": 0.07,
-        "elnino_n": 11,
-        "elnino_mean": 106.1,
-        "elnino_median": 108.0,
-        "elnino_std": 28.0,
-        "elnino_min": 57,
-        "elnino_max": 153,
-        "elnino_pct_below": 45,
-        "neutral_n": 22,
-        "neutral_mean": 102.1,
-        "neutral_median": 101.0,
-        "neutral_std": 20.0,
-        "neutral_min": 66,
-        "neutral_max": 155,
-        "neutral_pct_below": 41,
-        "lanina_n": 13,
-        "lanina_mean": 93.5,
-        "lanina_median": 93.0,
-        "lanina_std": 15.2,
-        "lanina_min": 65,
-        "lanina_max": 118,
-        "lanina_pct_below": 62,
-        "elnino_minus_lanina_pp": 12,
-    }
-    with open("stats.json", "w") as f:
-        json.dump(page_stats, f, indent=2)
-        f.write("\n")
-    print("\nWrote stats.json")
-    print("\n=== stats.json checklist (current index.html values) ===")
-    displayed_values = dict(page_stats)
-    displayed_values["pearson_r"] = 0.14
-    for key, value in displayed_values.items():
-        print("  %-24s %s" % (key, value))
-    print("\nUse the April 1 medians and the min-max ranges to fill the"
-          " placeholders in the post draft. The overlap between the"
-          " ranges IS the finding.")
 
 
 if __name__ == "__main__":

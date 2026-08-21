@@ -1,7 +1,7 @@
 # Colorado ENSO Explorer
 
-Does La Niña actually matter for Colorado snowpack? 46 winters of federal
-data say barely.
+Does La Niña actually matter for Colorado snowpack? This repository contains
+the underlying analysis pipeline while the public page is under revision.
 
 Live page: https://rmallorybpc.github.io/colorado-snowpack-enso/
 
@@ -20,9 +20,8 @@ sample.
 
 | File | What it is |
 |---|---|
-| `index.html` | The findings page (GitHub Pages) |
-| `colorado_snowpack_enso.py` | The full pipeline: ONI pull, ONI binning, SNOTEL pull, composite, chart, stats |
-| `snowpack_enso_composite.png` | The composite chart |
+| `index.html` | Holding notice for the public page |
+| `colorado_snowpack_enso.py` | The analysis pipeline: ONI pull, ONI binning, SNOTEL pull, composite, chart, April 1 SWE stats output |
 | `snowpack_enso_stats.txt` | April 1 SWE medians and ranges per ENSO bin per station |
 | `tmg.css`, `TMG-BRAND-GUIDE.md` | TMG design system |
 
@@ -35,6 +34,10 @@ SNOTEL stations (Tower, Berthoud Summit, Wolf Creek Summit) is cut into
 October to June seasonal curves. Seasons are grouped by bin. The chart
 shows every individual season with the group medians on top. This is a
 historical analog composite, not a forecast.
+
+Previously published summary figures were taken out of service. Use the
+script outputs directly (`snowpack_enso_stats.txt` and a locally generated
+chart) until the page is republished with fully reproducible figures.
 
 ## Data sources
 
