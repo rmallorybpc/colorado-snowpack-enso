@@ -97,19 +97,117 @@
 <!-- ── Main content ──────────────────────────────────── -->
 <main class="tmg-page tmg-container" style="padding-top:2.5rem; padding-bottom:2rem;">
   <section class="tmg-card">
-    <h1 class="tmg-card__title">Page under revision</h1>
-    <p>
-      This analysis is being rebuilt so that every published figure is generated directly from the source data. It will return with a reproducible methodology.
-    </p>
+    <p class="tmg-section-label">TMG Data Analysis · Colorado Snowpack</p>
+    <h1 class="tmg-card__title">Does La Nina Actually Matter for Colorado Snowpack?</h1>
+    <p class="answer-lead"><strong>Short answer: no.</strong> Knowing whether it is a La Nina year does not tell you if Colorado's snow will be good or bad.</p>
+    <p>44 SNOTEL stations. 46 winters. Water years 1981 through 2026. Every figure on this page is generated directly from the analysis script.</p>
   </section>
 
   <section class="tmg-card" style="margin-top:1rem;">
-    <h2 class="tmg-card__title">Render token demonstration</h2>
-    <p>
-      Station count: 44<br />
-      Season count: 46<br />
-      Three-bin Pearson r (3 dp): -0.003
-    </p>
+    <p class="tmg-section-label">Primary finding</p>
+    <h2 class="tmg-card__title">ENSO phase does not predict Colorado snowpack</h2>
+    <p>Across 46 water years, April 1 snowpack averaged 104.5 percent of median in La Nina winters, 93.9 percent in neutral winters, and 103.2 percent in El Nino winters. A one-way ANOVA across the three phases returns F = 0.91 and p = 0.412. The correlation between the October through March ONI value and statewide snowpack is r = -0.003, with p = 0.982.</p>
+    <p>Percent of median here means each station measured against its own April 1 median across its own record, then averaged across stations to produce one value per winter. The unit of analysis is the winter, not the station, because stations in the same season share the same weather.</p>
+    <div class="tmg-stat-row">
+      <article class="tmg-stat">
+        <p>44</p>
+        <p>SNOTEL stations analyzed</p>
+      </article>
+      <article class="tmg-stat">
+        <p>46</p>
+        <p>Winters (WY1981-WY2026)</p>
+      </article>
+      <article class="tmg-stat">
+        <p>p = 0.412</p>
+        <p>One-way ANOVA (not significant)</p>
+      </article>
+      <article class="tmg-stat">
+        <p>r = -0.003</p>
+        <p>ONI correlation with snowpack</p>
+      </article>
+    </div>
+    <p>The result does not depend on which stations were chosen. Recomputing the analysis 44 times, holding out one station each time, the ANOVA p-value ranged from 0.394 to 0.431. It fell below 0.05 in 0 of 44 runs.</p>
+  </section>
+
+  <section class="tmg-card" style="margin-top:1rem;">
+    <p class="tmg-section-label">Secondary exploration</p>
+    <h2 class="tmg-card__title">The statewide answer hides a north-south split</h2>
+    <p>Colorado sits at the edge of the ENSO teleconnection, with the northern and southern mountains on different sides of it. Splitting the stations into three latitude bands shows a pattern the statewide average cancels out. This is exploratory. None of it reaches significance, and it should be read as a description of the record rather than as a result.</p>
+    <div class="tmg-table-wrap">
+      <table class="tmg-table">
+        <thead>
+          <tr>
+            <th>Region</th>
+            <th>Stations</th>
+            <th>La Nina</th>
+            <th>Neutral</th>
+            <th>El Nino</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>North</td>
+            <td>21</td>
+            <td>104.5</td>
+            <td>94.1</td>
+            <td>98.6</td>
+          </tr>
+          <tr>
+            <td>Central</td>
+            <td>11</td>
+            <td>107.7</td>
+            <td>95.5</td>
+            <td>105.0</td>
+          </tr>
+          <tr>
+            <td>South</td>
+            <td>12</td>
+            <td>101.7</td>
+            <td>92.1</td>
+            <td>109.6</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <p>Values are percent of each station's own April 1 median. Latitude band boundaries were computed from the station coordinates, not assigned by hand.</p>
+    <p>The difference between La Nina and El Nino runs 5.9 points in the north, 2.7 in the central mountains, and -8.0 in the south. Statewide it is 1.3. The statewide near-zero exists because the north and south run in opposite directions.</p>
+    <p>Holding out one station at a time, the sign of that difference held in 21 of 21 runs in the north and 12 of 12 in the south. The pattern is stable against station choice. That is a different question from whether it is distinguishable from year-to-year noise, which the next section tests.</p>
+  </section>
+
+  <section class="tmg-card" style="margin-top:1rem;">
+    <p class="tmg-section-label">Secondary exploration</p>
+    <h2 class="tmg-card__title">El Nino tilts snow south, and La Nina looks like a normal winter</h2>
+    <p>To test the split directly, subtract the southern index from the northern one for each winter, then group those 46 differences by ENSO phase. A positive value means the northern mountains ran ahead of the southern mountains that year.</p>
+    <p>La Nina winters average 2.85 points. Neutral winters average 2.04. El Nino winters average -11.03. La Nina and neutral are nearly the same. The tilt belongs to El Nino.</p>
+    <p>A one-way ANOVA on the differences returns F = 1.18 and p = 0.317. The correlation between ONI and the difference is r = -0.196, with p = 0.191. Neither clears the 0.05 threshold. Across 33 leave-one-out runs the p-value ranged from 0.252 to 0.402, below 0.05 in 0 of 33.</p>
+    <p>So the geographic tilt is consistent and not significant. Forty-six winters is not enough to separate it from noise. That is the finding, and it is a limit of the record rather than a flaw in the measurement.</p>
+  </section>
+
+  <section class="tmg-card" style="margin-top:1rem;">
+    <p class="tmg-section-label">Context</p>
+    <h2 class="tmg-card__title">The worst snowpack on record came in a neutral winter</h2>
+    <p>The lowest April 1 value in the entire 46-winter record is 24.2 percent of median, and it belongs to water year 2026. That winter was ENSO-neutral. If phase drove Colorado snowpack, the record low would not land in the middle category.</p>
+    <p>One caveat on that season. NRCS reported statewide snowpack falling from about 60 percent of median on March 1, 2026 to roughly 20 percent by April 1, driven by record March warmth and early melt rather than by a failure to accumulate. April 1 snow water equivalent cannot distinguish a winter that never built snowpack from one that built it and lost it early. Both read the same here.</p>
+  </section>
+
+  <section class="tmg-card" style="margin-top:1rem;">
+    <p class="tmg-section-label">Methodology</p>
+    <h2 class="tmg-card__title">Data sources and methods</h2>
+    <p>Stations. The station list was derived, not chosen. A discovery script queried the NRCS AWDB inventory for every Colorado SNOTEL site, then filtered on actual April 1 coverage: a record beginning in water year 1981 or earlier, continuing to the present, with no more than two missing April 1 values. Region tags were computed from station latitude.</p>
+    <p>Minimum median filter. Stations whose April 1 median falls below 5.0 inches were excluded, because percent of median is unstable at a site where a one-inch difference is a large percentage. 2 stations were removed on this basis. This is a judgment call and it is stated here so a reader can disagree with it.</p>
+    <p>ENSO classification. Water-year phase comes from the NOAA CPC Oceanic Nino Index, averaged across the six overlapping three-month seasons centered on October through March. La Nina is an average at or below -0.5, El Nino at or above 0.5, neutral in between.</p>
+    <p>Sample gate. No statistical test is computed on a grouping where any bin holds fewer than 8 winters. A five-category split by ENSO strength was computed for description but carries no test, because the strong categories hold 2 and 4 winters.</p>
+    <p>Reproducibility. Every figure on this page is written into the page by a render script that reads the analysis output. No number is typed by hand. Source: https://www.cpc.ncep.noaa.gov/data/indices/oni.ascii.txt and https://wcc.sc.egov.usda.gov/awdbRestApi/services/v1.</p>
+  </section>
+
+  <section class="tmg-card" style="margin-top:1rem;">
+    <p class="tmg-section-label">Limitations</p>
+    <h2 class="tmg-card__title">What this analysis cannot tell you</h2>
+    <ul>
+      <li>Several views of the data were examined: statewide, three regions, and a north-south differential. None reached significance. Reporting the largest apparent effect as though it had been the planned test would overstate the evidence.</li>
+      <li>Percent of median is relative to each station's own record, not to the NRCS 1991 to 2020 reference product. Figures here will not match NRCS basin reports exactly.</li>
+      <li>April 1 snow water equivalent measures one</li>
+    </ul>
   </section>
 </main>
 

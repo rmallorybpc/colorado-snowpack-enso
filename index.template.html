@@ -96,19 +96,117 @@
 <!-- ── Main content ──────────────────────────────────── -->
 <main class="tmg-page tmg-container" style="padding-top:2.5rem; padding-bottom:2rem;">
   <section class="tmg-card">
-    <h1 class="tmg-card__title">Page under revision</h1>
-    <p>
-      This analysis is being rebuilt so that every published figure is generated directly from the source data. It will return with a reproducible methodology.
-    </p>
+    <p class="tmg-section-label">TMG Data Analysis · Colorado Snowpack</p>
+    <h1 class="tmg-card__title">Does La Nina Actually Matter for Colorado Snowpack?</h1>
+    <p class="answer-lead"><strong>Short answer: no.</strong> Knowing whether it is a La Nina year does not tell you if Colorado's snow will be good or bad.</p>
+    <p>{{stats:provenance.station_count}} SNOTEL stations. {{stats:provenance.season_count}} winters. Water years {{stats:provenance.common_start_wy}} through {{stats:provenance.resolved_end_wy}}. Every figure on this page is generated directly from the analysis script.</p>
   </section>
 
   <section class="tmg-card" style="margin-top:1rem;">
-    <h2 class="tmg-card__title">Render token demonstration</h2>
-    <p>
-      Station count: {{stats:provenance.station_count}}<br />
-      Season count: {{stats:provenance.season_count}}<br />
-      Three-bin Pearson r (3 dp): {{stats:inferential.three_bin.pearson.r|3}}
-    </p>
+    <p class="tmg-section-label">Primary finding</p>
+    <h2 class="tmg-card__title">ENSO phase does not predict Colorado snowpack</h2>
+    <p>Across {{stats:provenance.season_count}} water years, April 1 snowpack averaged {{stats:statewide.three_bin.La Nina.mean|1}} percent of median in La Nina winters, {{stats:statewide.three_bin.Neutral.mean|1}} percent in neutral winters, and {{stats:statewide.three_bin.El Nino.mean|1}} percent in El Nino winters. A one-way ANOVA across the three phases returns F = {{stats:inferential.three_bin.anova.f_statistic|2}} and p = {{stats:inferential.three_bin.anova.p_value|3}}. The correlation between the October through March ONI value and statewide snowpack is r = {{stats:inferential.three_bin.pearson.r|3}}, with p = {{stats:inferential.three_bin.pearson.p_value|3}}.</p>
+    <p>Percent of median here means each station measured against its own April 1 median across its own record, then averaged across stations to produce one value per winter. The unit of analysis is the winter, not the station, because stations in the same season share the same weather.</p>
+    <div class="tmg-stat-row">
+      <article class="tmg-stat">
+        <p>{{stats:provenance.station_count}}</p>
+        <p>SNOTEL stations analyzed</p>
+      </article>
+      <article class="tmg-stat">
+        <p>{{stats:provenance.season_count}}</p>
+        <p>Winters (WY{{stats:provenance.common_start_wy}}-WY{{stats:provenance.resolved_end_wy}})</p>
+      </article>
+      <article class="tmg-stat">
+        <p>p = {{stats:inferential.three_bin.anova.p_value|3}}</p>
+        <p>One-way ANOVA (not significant)</p>
+      </article>
+      <article class="tmg-stat">
+        <p>r = {{stats:inferential.three_bin.pearson.r|3}}</p>
+        <p>ONI correlation with snowpack</p>
+      </article>
+    </div>
+    <p>The result does not depend on which stations were chosen. Recomputing the analysis {{stats:robustness.scopes.statewide.leave_one_out_run_count}} times, holding out one station each time, the ANOVA p-value ranged from {{stats:robustness.scopes.statewide.inferential.anova_p_value.leave_one_out_min|3}} to {{stats:robustness.scopes.statewide.inferential.anova_p_value.leave_one_out_max|3}}. It fell below 0.05 in {{stats:robustness.scopes.statewide.inferential.anova_p_value.below_threshold_count}} of {{stats:robustness.scopes.statewide.inferential.anova_p_value.below_threshold_of}} runs.</p>
+  </section>
+
+  <section class="tmg-card" style="margin-top:1rem;">
+    <p class="tmg-section-label">Secondary exploration</p>
+    <h2 class="tmg-card__title">The statewide answer hides a north-south split</h2>
+    <p>Colorado sits at the edge of the ENSO teleconnection, with the northern and southern mountains on different sides of it. Splitting the stations into three latitude bands shows a pattern the statewide average cancels out. This is exploratory. None of it reaches significance, and it should be read as a description of the record rather than as a result.</p>
+    <div class="tmg-table-wrap">
+      <table class="tmg-table">
+        <thead>
+          <tr>
+            <th>Region</th>
+            <th>Stations</th>
+            <th>La Nina</th>
+            <th>Neutral</th>
+            <th>El Nino</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>North</td>
+            <td>{{stats:robustness.scopes.north.station_count}}</td>
+            <td>{{stats:regional.north.three_bin.La Nina.mean|1}}</td>
+            <td>{{stats:regional.north.three_bin.Neutral.mean|1}}</td>
+            <td>{{stats:regional.north.three_bin.El Nino.mean|1}}</td>
+          </tr>
+          <tr>
+            <td>Central</td>
+            <td>{{stats:robustness.scopes.central.station_count}}</td>
+            <td>{{stats:regional.central.three_bin.La Nina.mean|1}}</td>
+            <td>{{stats:regional.central.three_bin.Neutral.mean|1}}</td>
+            <td>{{stats:regional.central.three_bin.El Nino.mean|1}}</td>
+          </tr>
+          <tr>
+            <td>South</td>
+            <td>{{stats:robustness.scopes.south.station_count}}</td>
+            <td>{{stats:regional.south.three_bin.La Nina.mean|1}}</td>
+            <td>{{stats:regional.south.three_bin.Neutral.mean|1}}</td>
+            <td>{{stats:regional.south.three_bin.El Nino.mean|1}}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <p>Values are percent of each station's own April 1 median. Latitude band boundaries were computed from the station coordinates, not assigned by hand.</p>
+    <p>The difference between La Nina and El Nino runs {{stats:robustness.scopes.north.gradient_la_nina_minus_el_nino.all_stations|1}} points in the north, {{stats:robustness.scopes.central.gradient_la_nina_minus_el_nino.all_stations|1}} in the central mountains, and {{stats:robustness.scopes.south.gradient_la_nina_minus_el_nino.all_stations|1}} in the south. Statewide it is {{stats:robustness.scopes.statewide.gradient_la_nina_minus_el_nino.all_stations|1}}. The statewide near-zero exists because the north and south run in opposite directions.</p>
+    <p>Holding out one station at a time, the sign of that difference held in {{stats:robustness.scopes.north.gradient_la_nina_minus_el_nino.sign_stability}} runs in the north and {{stats:robustness.scopes.south.gradient_la_nina_minus_el_nino.sign_stability}} in the south. The pattern is stable against station choice. That is a different question from whether it is distinguishable from year-to-year noise, which the next section tests.</p>
+  </section>
+
+  <section class="tmg-card" style="margin-top:1rem;">
+    <p class="tmg-section-label">Secondary exploration</p>
+    <h2 class="tmg-card__title">El Nino tilts snow south, and La Nina looks like a normal winter</h2>
+    <p>To test the split directly, subtract the southern index from the northern one for each winter, then group those {{stats:provenance.season_count}} differences by ENSO phase. A positive value means the northern mountains ran ahead of the southern mountains that year.</p>
+    <p>La Nina winters average {{stats:north_south_differential.three_bin.La Nina.mean|2}} points. Neutral winters average {{stats:north_south_differential.three_bin.Neutral.mean|2}}. El Nino winters average {{stats:north_south_differential.three_bin.El Nino.mean|2}}. La Nina and neutral are nearly the same. The tilt belongs to El Nino.</p>
+    <p>A one-way ANOVA on the differences returns F = {{stats:north_south_differential.inferential.anova.f_statistic|2}} and p = {{stats:north_south_differential.inferential.anova.p_value|3}}. The correlation between ONI and the difference is r = {{stats:north_south_differential.inferential.pearson.r|3}}, with p = {{stats:north_south_differential.inferential.pearson.p_value|3}}. Neither clears the 0.05 threshold. Across {{stats:north_south_differential.robustness.leave_one_out_run_count}} leave-one-out runs the p-value ranged from {{stats:north_south_differential.robustness.anova_p_value.leave_one_out_min|3}} to {{stats:north_south_differential.robustness.anova_p_value.leave_one_out_max|3}}, below 0.05 in {{stats:north_south_differential.robustness.anova_p_value.below_threshold_count}} of {{stats:north_south_differential.robustness.anova_p_value.below_threshold_of}}.</p>
+    <p>So the geographic tilt is consistent and not significant. Forty-six winters is not enough to separate it from noise. That is the finding, and it is a limit of the record rather than a flaw in the measurement.</p>
+  </section>
+
+  <section class="tmg-card" style="margin-top:1rem;">
+    <p class="tmg-section-label">Context</p>
+    <h2 class="tmg-card__title">The worst snowpack on record came in a neutral winter</h2>
+    <p>The lowest April 1 value in the entire {{stats:provenance.season_count}}-winter record is {{stats:statewide.three_bin.Neutral.min|1}} percent of median, and it belongs to water year {{stats:provenance.resolved_end_wy}}. That winter was ENSO-neutral. If phase drove Colorado snowpack, the record low would not land in the middle category.</p>
+    <p>One caveat on that season. NRCS reported statewide snowpack falling from about 60 percent of median on March 1, 2026 to roughly 20 percent by April 1, driven by record March warmth and early melt rather than by a failure to accumulate. April 1 snow water equivalent cannot distinguish a winter that never built snowpack from one that built it and lost it early. Both read the same here.</p>
+  </section>
+
+  <section class="tmg-card" style="margin-top:1rem;">
+    <p class="tmg-section-label">Methodology</p>
+    <h2 class="tmg-card__title">Data sources and methods</h2>
+    <p>Stations. The station list was derived, not chosen. A discovery script queried the NRCS AWDB inventory for every Colorado SNOTEL site, then filtered on actual April 1 coverage: a record beginning in water year {{stats:provenance.common_start_wy}} or earlier, continuing to the present, with no more than two missing April 1 values. Region tags were computed from station latitude.</p>
+    <p>Minimum median filter. Stations whose April 1 median falls below {{stats:provenance.MIN_STATION_MEDIAN_SWE_IN|1}} inches were excluded, because percent of median is unstable at a site where a one-inch difference is a large percentage. {{stats:provenance.excluded_station_count_min_median_filter}} stations were removed on this basis. This is a judgment call and it is stated here so a reader can disagree with it.</p>
+    <p>ENSO classification. Water-year phase comes from the NOAA CPC Oceanic Nino Index, averaged across the six overlapping three-month seasons centered on October through March. La Nina is an average at or below {{stats:provenance.oni_thresholds.three_bin.la_nina_max|1}}, El Nino at or above {{stats:provenance.oni_thresholds.three_bin.el_nino_min_inclusive|1}}, neutral in between.</p>
+    <p>Sample gate. No statistical test is computed on a grouping where any bin holds fewer than {{stats:provenance.min_seasons_for_test}} winters. A five-category split by ENSO strength was computed for description but carries no test, because the strong categories hold {{stats:gate.five_bin.season_counts.Strong La Nina}} and {{stats:gate.five_bin.season_counts.Strong El Nino}} winters.</p>
+    <p>Reproducibility. Every figure on this page is written into the page by a render script that reads the analysis output. No number is typed by hand. Source: {{stats:provenance.oni_source_url}} and {{stats:provenance.awdb_endpoint}}.</p>
+  </section>
+
+  <section class="tmg-card" style="margin-top:1rem;">
+    <p class="tmg-section-label">Limitations</p>
+    <h2 class="tmg-card__title">What this analysis cannot tell you</h2>
+    <ul>
+      <li>Several views of the data were examined: statewide, three regions, and a north-south differential. None reached significance. Reporting the largest apparent effect as though it had been the planned test would overstate the evidence.</li>
+      <li>Percent of median is relative to each station's own record, not to the NRCS 1991 to 2020 reference product. Figures here will not match NRCS basin reports exactly.</li>
+      <li>April 1 snow water equivalent measures one</li>
+    </ul>
   </section>
 </main>
 
