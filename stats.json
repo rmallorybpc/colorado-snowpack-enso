@@ -1,6 +1,6 @@
 {
   "provenance": {
-    "run_utc": "2026-08-22T02:17:33.312895+00:00",
+    "run_utc": "2026-08-22T02:31:33.817613+00:00",
     "oni_source_url": "https://www.cpc.ncep.noaa.gov/data/indices/oni.ascii.txt",
     "awdb_endpoint": "https://wcc.sc.egov.usda.gov/awdbRestApi/services/v1",
     "stations_file_path": "/workspaces/colorado-snowpack-enso/stations_candidate.json",
@@ -1553,6 +1553,402 @@
     "857:CO:SNTL": 9.6,
     "430:CO:SNTL": 12.600000000000001,
     "431:CO:SNTL": 25.15
+  },
+  "north_south_differential": {
+    "three_bin": {
+      "La Nina": {
+        "n_seasons": 16,
+        "mean": 2.8457113386902666,
+        "median": -1.5810756692083245,
+        "min": -46.482953804062404,
+        "max": 58.974785158481424,
+        "stddev": 27.367205433960436,
+        "water_years": [
+          1984,
+          1985,
+          1989,
+          1996,
+          1999,
+          2000,
+          2001,
+          2006,
+          2008,
+          2009,
+          2011,
+          2012,
+          2018,
+          2021,
+          2022,
+          2023
+        ],
+        "values": [
+          -0.9473335620788532,
+          -46.482953804062404,
+          -16.866291634351242,
+          58.974785158481424,
+          13.213413990589402,
+          16.364634542255573,
+          -16.67344408064031,
+          28.594578970371316,
+          -27.027844823660658,
+          -0.13817383561475083,
+          50.30742605421109,
+          -8.944041473776643,
+          28.329484847464734,
+          -12.098076703565894,
+          -2.214817776337796,
+          -18.859964450240724
+        ]
+      },
+      "Neutral": {
+        "n_seasons": 15,
+        "mean": 2.0439081717856764,
+        "median": -1.7092491579724651,
+        "min": -32.90565082729081,
+        "max": 39.280669284751255,
+        "stddev": 24.18585788659967,
+        "water_years": [
+          1981,
+          1982,
+          1986,
+          1990,
+          1991,
+          1993,
+          1994,
+          1997,
+          2002,
+          2004,
+          2013,
+          2014,
+          2017,
+          2025,
+          2026
+        ],
+        "values": [
+          -3.027364308567215,
+          -13.013503764401193,
+          19.717778672652955,
+          36.275982166047086,
+          -27.505732533984414,
+          -32.90565082729081,
+          -1.7092491579724651,
+          -10.22829263436546,
+          22.041588151446312,
+          -19.34055945745063,
+          3.9721863122613996,
+          39.280669284751255,
+          -32.78510035239931,
+          36.5415927532837,
+          13.344278272773938
+        ]
+      },
+      "El Nino": {
+        "n_seasons": 15,
+        "mean": -11.03223846346972,
+        "median": -7.190554061700055,
+        "min": -55.65085139239336,
+        "max": 38.737130098470374,
+        "stddev": 29.29012984916029,
+        "water_years": [
+          1983,
+          1987,
+          1988,
+          1992,
+          1995,
+          1998,
+          2003,
+          2005,
+          2007,
+          2010,
+          2015,
+          2016,
+          2019,
+          2020,
+          2024
+        ],
+        "values": [
+          -17.244032788542555,
+          -51.781443942749846,
+          38.737130098470374,
+          -22.864121908839863,
+          -53.56440616521415,
+          -7.190554061700055,
+          23.620443815647178,
+          -55.65085139239336,
+          11.889193349268439,
+          -34.249992001313444,
+          4.336511358920603,
+          15.859429938962194,
+          -36.58817730051457,
+          11.681283513637865,
+          7.52601053431539
+        ]
+      }
+    },
+    "gate": {
+      "season_counts": {
+        "La Nina": 16,
+        "Neutral": 15,
+        "El Nino": 15
+      },
+      "all_bins_meet_min_seasons": true,
+      "failing_bins": []
+    },
+    "inferential": {
+      "anova": {
+        "f_statistic": 1.1793666934390525,
+        "p_value": 0.3172210831590683
+      },
+      "failing_bins": [],
+      "pearson": {
+        "r": -0.19638055110908625,
+        "p_value": 0.1908590737534203
+      }
+    },
+    "effect_size_la_nina_minus_el_nino": 13.877949802159987,
+    "differential_by_water_year": {
+      "WY1981": -3.027364308567215,
+      "WY1982": -13.013503764401193,
+      "WY1983": -17.244032788542555,
+      "WY1984": -0.9473335620788532,
+      "WY1985": -46.482953804062404,
+      "WY1986": 19.717778672652955,
+      "WY1987": -51.781443942749846,
+      "WY1988": 38.737130098470374,
+      "WY1989": -16.866291634351242,
+      "WY1990": 36.275982166047086,
+      "WY1991": -27.505732533984414,
+      "WY1992": -22.864121908839863,
+      "WY1993": -32.90565082729081,
+      "WY1994": -1.7092491579724651,
+      "WY1995": -53.56440616521415,
+      "WY1996": 58.974785158481424,
+      "WY1997": -10.22829263436546,
+      "WY1998": -7.190554061700055,
+      "WY1999": 13.213413990589402,
+      "WY2000": 16.364634542255573,
+      "WY2001": -16.67344408064031,
+      "WY2002": 22.041588151446312,
+      "WY2003": 23.620443815647178,
+      "WY2004": -19.34055945745063,
+      "WY2005": -55.65085139239336,
+      "WY2006": 28.594578970371316,
+      "WY2007": 11.889193349268439,
+      "WY2008": -27.027844823660658,
+      "WY2009": -0.13817383561475083,
+      "WY2010": -34.249992001313444,
+      "WY2011": 50.30742605421109,
+      "WY2012": -8.944041473776643,
+      "WY2013": 3.9721863122613996,
+      "WY2014": 39.280669284751255,
+      "WY2015": 4.336511358920603,
+      "WY2016": 15.859429938962194,
+      "WY2017": -32.78510035239931,
+      "WY2018": 28.329484847464734,
+      "WY2019": -36.58817730051457,
+      "WY2020": 11.681283513637865,
+      "WY2021": -12.098076703565894,
+      "WY2022": -2.214817776337796,
+      "WY2023": -18.859964450240724,
+      "WY2024": 7.52601053431539,
+      "WY2025": 36.5415927532837,
+      "WY2026": 13.344278272773938
+    },
+    "robustness": {
+      "iterated_regions": [
+        "north",
+        "south"
+      ],
+      "leave_one_out_run_count": 33,
+      "held_out_stations": [
+        {
+          "triplet": "322:CO:SNTL",
+          "name": "Bear Lake",
+          "region": "north"
+        },
+        {
+          "triplet": "335:CO:SNTL",
+          "name": "Berthoud Summit",
+          "region": "north"
+        },
+        {
+          "triplet": "378:CO:SNTL",
+          "name": "Burro Mountain",
+          "region": "north"
+        },
+        {
+          "triplet": "408:CO:SNTL",
+          "name": "Columbine",
+          "region": "north"
+        },
+        {
+          "triplet": "438:CO:SNTL",
+          "name": "Deadman Hill",
+          "region": "north"
+        },
+        {
+          "triplet": "457:CO:SNTL",
+          "name": "Dry Lake",
+          "region": "north"
+        },
+        {
+          "triplet": "467:CO:SNTL",
+          "name": "Elk River",
+          "region": "north"
+        },
+        {
+          "triplet": "505:CO:SNTL",
+          "name": "Grizzly Peak",
+          "region": "north"
+        },
+        {
+          "triplet": "551:CO:SNTL",
+          "name": "Joe Wright",
+          "region": "north"
+        },
+        {
+          "triplet": "564:CO:SNTL",
+          "name": "Lake Eldora",
+          "region": "north"
+        },
+        {
+          "triplet": "565:CO:SNTL",
+          "name": "Lake Irene",
+          "region": "north"
+        },
+        {
+          "triplet": "607:CO:SNTL",
+          "name": "Lynx Pass",
+          "region": "north"
+        },
+        {
+          "triplet": "663:CO:SNTL",
+          "name": "Niwot",
+          "region": "north"
+        },
+        {
+          "triplet": "688:CO:SNTL",
+          "name": "Phantom Valley",
+          "region": "north"
+        },
+        {
+          "triplet": "718:CO:SNTL",
+          "name": "Roach",
+          "region": "north"
+        },
+        {
+          "triplet": "802:CO:SNTL",
+          "name": "Summit Ranch",
+          "region": "north"
+        },
+        {
+          "triplet": "825:CO:SNTL",
+          "name": "Tower",
+          "region": "north"
+        },
+        {
+          "triplet": "838:CO:SNTL",
+          "name": "University Camp",
+          "region": "north"
+        },
+        {
+          "triplet": "842:CO:SNTL",
+          "name": "Vail Mountain",
+          "region": "north"
+        },
+        {
+          "triplet": "869:CO:SNTL",
+          "name": "Willow Creek Pass",
+          "region": "north"
+        },
+        {
+          "triplet": "870:CO:SNTL",
+          "name": "Willow Park",
+          "region": "north"
+        },
+        {
+          "triplet": "430:CO:SNTL",
+          "name": "Culebra #2",
+          "region": "south"
+        },
+        {
+          "triplet": "431:CO:SNTL",
+          "name": "Cumbres Trestle",
+          "region": "south"
+        },
+        {
+          "triplet": "538:CO:SNTL",
+          "name": "Idarado",
+          "region": "south"
+        },
+        {
+          "triplet": "580:CO:SNTL",
+          "name": "Lily Pond",
+          "region": "south"
+        },
+        {
+          "triplet": "586:CO:SNTL",
+          "name": "Lizard Head Pass",
+          "region": "south"
+        },
+        {
+          "triplet": "589:CO:SNTL",
+          "name": "Lone Cone",
+          "region": "south"
+        },
+        {
+          "triplet": "624:CO:SNTL",
+          "name": "Middle Creek",
+          "region": "south"
+        },
+        {
+          "triplet": "629:CO:SNTL",
+          "name": "Mineral Creek",
+          "region": "south"
+        },
+        {
+          "triplet": "713:CO:SNTL",
+          "name": "Red Mountain Pass",
+          "region": "south"
+        },
+        {
+          "triplet": "762:CO:SNTL",
+          "name": "Slumgullion",
+          "region": "south"
+        },
+        {
+          "triplet": "840:CO:SNTL",
+          "name": "Upper San Juan",
+          "region": "south"
+        },
+        {
+          "triplet": "857:CO:SNTL",
+          "name": "Whiskey Ck",
+          "region": "south"
+        }
+      ],
+      "anova_p_value": {
+        "leave_one_out_min": 0.2517474282179753,
+        "leave_one_out_max": 0.4017293156198599,
+        "below_threshold": 0.05,
+        "below_threshold_count": 0,
+        "below_threshold_of": 33,
+        "not_computed_runs": 0,
+        "not_computed_failing_bins": []
+      },
+      "pearson_r": {
+        "leave_one_out_min": -0.21929299332834185,
+        "leave_one_out_max": -0.17004844648532363
+      },
+      "effect_size_la_nina_minus_el_nino": {
+        "all_stations": 13.877949802159987,
+        "leave_one_out_min": 11.974319890535615,
+        "leave_one_out_max": 14.802898646848746,
+        "sign_matches_all_stations_count": 33,
+        "sign_matches_all_stations_of": 33,
+        "sign_stability": "33 of 33"
+      }
+    }
   },
   "inferential": {
     "five_bin": {

@@ -410,6 +410,215 @@ def compute_scope_index_by_wy(
     return series_by_wy
 
 
+def compute_north_south_differential_by_wy(
+    regional_index_by_wy: Dict[str, Dict[int, float]],
+    start_wy: int,
+    end_wy: int,
+) -> Dict[int, float]:
+    north_series = regional_index_by_wy["north"]
+    south_series = regional_index_by_wy["south"]
+    differential_by_wy: Dict[int, float] = {}
+    for wy in range(start_wy, end_wy + 1):
+        if wy not in north_series:
+            raise RuntimeError(f"North regional index missing WY{wy} for differential.")
+        if wy not in south_series:
+            raise RuntimeError(f"South regional index missing WY{wy} for differential.")
+        differential_by_wy[wy] = north_series[wy] - south_series[wy]
+    return differential_by_wy
+
+
+def compute_north_south_differential(
+    differential_by_wy: Dict[int, float],
+    three_bins_by_wy: Dict[int, str],
+    oni_by_wy: Dict[int, float],
+) -> Dict[str, object]:
+    three_bin_results = compute_bin_results(
+        series_by_wy=differential_by_wy,
+        bins_by_wy=three_bins_by_wy,
+        bin_order=THREE_BIN_ORDER,
+        label="north_minus_south differential three-bin",
+    )
+    gate = build_gate(three_bin_results, THREE_BIN_ORDER)
+
+    failure_message = "not computed: season count below MIN_SEASONS_FOR_TEST"
+    if gate["all_bins_meet_min_seasons"]:
+        groups = [list(three_bin_results[bin_name]["values"]) for bin_name in THREE_BIN_ORDER]
+        anova = f_oneway(*groups)
+        anova_result: Dict[str, object] | str = {
+            "f_statistic": float(anova.statistic),
+            "p_value": float(anova.pvalue),
+        }
+    else:
+        anova_result = failure_message
+
+    years = sorted(differential_by_wy)
+    oni_values = [oni_by_wy[wy] for wy in years]
+    differential_values = [differential_by_wy[wy] for wy in years]
+    correlation = pearsonr(oni_values, differential_values)
+
+    effect_size = float(three_bin_results["La Nina"]["mean"]) - float(
+        three_bin_results["El Nino"]["mean"]
+    )
+
+    return {
+        "three_bin": three_bin_results,
+        "gate": gate,
+        "inferential": {
+            "anova": anova_result,
+            "failing_bins": list(gate["failing_bins"]),
+            "pearson": {
+                "r": float(correlation.statistic),
+                "p_value": float(correlation.pvalue),
+            },
+        },
+        "effect_size_la_nina_minus_el_nino": effect_size,
+        "differential_by_water_year": to_wy_keyed_object(differential_by_wy),
+    }
+
+
+def compute_north_south_differential_robustness(
+    station_percent_by_triplet: Dict[str, Dict[int, float]],
+    region_by_triplet: Dict[str, str],
+    station_name_by_triplet: Dict[str, str],
+    start_wy: int,
+    end_wy: int,
+    three_bins_by_wy: Dict[int, str],
+    oni_by_wy: Dict[int, float],
+    all_stations_effect_size: float,
+) -> Dict[str, object]:
+    north_triplets = sorted(
+        [triplet for triplet, region in region_by_triplet.items() if region == "north"]
+    )
+    south_triplets = sorted(
+        [triplet for triplet, region in region_by_triplet.items() if region == "south"]
+    )
+    held_out_triplets = north_triplets + south_triplets
+    if not held_out_triplets:
+        raise RuntimeError("No north/south stations available for differential robustness.")
+
+    anova_p_values: List[float] = []
+    pearson_r_values: List[float] = []
+    effect_sizes: List[float] = []
+    anova_not_computed_failing_bins: List[str] = []
+
+    all_stations_effect_sign = sign_of(all_stations_effect_size)
+    effect_sign_match_count = 0
+
+    for held_out_triplet in held_out_triplets:
+        run_north_triplets = [
+            triplet for triplet in north_triplets if triplet != held_out_triplet
+        ]
+        run_south_triplets = [
+            triplet for triplet in south_triplets if triplet != held_out_triplet
+        ]
+        if not run_north_triplets:
+            raise RuntimeError(
+                "Leave-one-out differential run removed all north stations "
+                f"after holding out {held_out_triplet}."
+            )
+        if not run_south_triplets:
+            raise RuntimeError(
+                "Leave-one-out differential run removed all south stations "
+                f"after holding out {held_out_triplet}."
+            )
+
+        north_series = compute_scope_index_by_wy(
+            station_percent_by_triplet=station_percent_by_triplet,
+            scope_triplets=run_north_triplets,
+            start_wy=start_wy,
+            end_wy=end_wy,
+            label="north leave-one-out differential",
+        )
+        south_series = compute_scope_index_by_wy(
+            station_percent_by_triplet=station_percent_by_triplet,
+            scope_triplets=run_south_triplets,
+            start_wy=start_wy,
+            end_wy=end_wy,
+            label="south leave-one-out differential",
+        )
+
+        run_differential_by_wy = {
+            wy: north_series[wy] - south_series[wy] for wy in range(start_wy, end_wy + 1)
+        }
+        run_three_bin = compute_bin_results(
+            series_by_wy=run_differential_by_wy,
+            bins_by_wy=three_bins_by_wy,
+            bin_order=THREE_BIN_ORDER,
+            label="north_minus_south differential three-bin leave-one-out",
+        )
+        run_gate = build_gate(run_three_bin, THREE_BIN_ORDER)
+        if run_gate["all_bins_meet_min_seasons"]:
+            groups = [list(run_three_bin[bin_name]["values"]) for bin_name in THREE_BIN_ORDER]
+            run_anova = f_oneway(*groups)
+            anova_p_values.append(float(run_anova.pvalue))
+        else:
+            for failing_bin in run_gate["failing_bins"]:
+                if failing_bin not in anova_not_computed_failing_bins:
+                    anova_not_computed_failing_bins.append(failing_bin)
+
+        years = sorted(run_differential_by_wy)
+        oni_values = [oni_by_wy[wy] for wy in years]
+        diff_values = [run_differential_by_wy[wy] for wy in years]
+        run_corr = pearsonr(oni_values, diff_values)
+        pearson_r_values.append(float(run_corr.statistic))
+
+        run_effect_size = float(run_three_bin["La Nina"]["mean"]) - float(
+            run_three_bin["El Nino"]["mean"]
+        )
+        effect_sizes.append(run_effect_size)
+        if sign_of(run_effect_size) == all_stations_effect_sign:
+            effect_sign_match_count += 1
+
+    if anova_p_values:
+        anova_summary: Dict[str, object] = {
+            "leave_one_out_min": min(anova_p_values),
+            "leave_one_out_max": max(anova_p_values),
+            "below_threshold": ANOVA_SIGNIFICANCE_P_THRESHOLD,
+            "below_threshold_count": sum(
+                1 for p_value in anova_p_values if p_value < ANOVA_SIGNIFICANCE_P_THRESHOLD
+            ),
+            "below_threshold_of": len(anova_p_values),
+            "not_computed_runs": len(held_out_triplets) - len(anova_p_values),
+            "not_computed_failing_bins": anova_not_computed_failing_bins,
+        }
+    else:
+        anova_summary = {
+            "leave_one_out_min": "not computed: season count below MIN_SEASONS_FOR_TEST",
+            "leave_one_out_max": "not computed: season count below MIN_SEASONS_FOR_TEST",
+            "below_threshold": ANOVA_SIGNIFICANCE_P_THRESHOLD,
+            "below_threshold_count": 0,
+            "below_threshold_of": 0,
+            "not_computed_runs": len(held_out_triplets),
+            "not_computed_failing_bins": anova_not_computed_failing_bins,
+        }
+
+    return {
+        "iterated_regions": ["north", "south"],
+        "leave_one_out_run_count": len(held_out_triplets),
+        "held_out_stations": [
+            {
+                "triplet": triplet,
+                "name": station_name_by_triplet[triplet],
+                "region": region_by_triplet[triplet],
+            }
+            for triplet in held_out_triplets
+        ],
+        "anova_p_value": anova_summary,
+        "pearson_r": {
+            "leave_one_out_min": min(pearson_r_values),
+            "leave_one_out_max": max(pearson_r_values),
+        },
+        "effect_size_la_nina_minus_el_nino": {
+            "all_stations": all_stations_effect_size,
+            "leave_one_out_min": min(effect_sizes),
+            "leave_one_out_max": max(effect_sizes),
+            "sign_matches_all_stations_count": effect_sign_match_count,
+            "sign_matches_all_stations_of": len(effect_sizes),
+            "sign_stability": f"{effect_sign_match_count} of {len(effect_sizes)}",
+        },
+    }
+
+
 def sign_of(value: float) -> int:
     if value > 0:
         return 1
@@ -696,6 +905,7 @@ def write_text_report(stats_payload: Dict[str, object], path: Path) -> None:
     statewide = stats_payload["statewide"]
     regional = stats_payload["regional"]
     inferential = stats_payload["inferential"]
+    north_south_differential = stats_payload.get("north_south_differential")
     robustness = stats_payload.get("robustness")
 
     lines.append("Colorado snowpack ENSO analysis (single-run computed output)")
@@ -799,6 +1009,113 @@ def write_text_report(stats_payload: Dict[str, object], path: Path) -> None:
                 f"pearson: r={format_float(result['pearson']['r'])}, "
                 f"p={format_float(result['pearson']['p_value'])}"
             )
+
+    if isinstance(north_south_differential, dict):
+        lines.append("")
+        lines.append("North-south differential (north minus south)")
+        lines.append("  three_bin")
+        three_bin = north_south_differential.get("three_bin")
+        if not isinstance(three_bin, dict):
+            raise RuntimeError("north_south_differential.three_bin is missing or malformed.")
+        for bin_name in THREE_BIN_ORDER:
+            details = three_bin.get(bin_name)
+            if not isinstance(details, dict):
+                raise RuntimeError(
+                    f"north_south_differential.three_bin.{bin_name} is missing or malformed."
+                )
+            lines.append(
+                "    "
+                f"{bin_name}: n={details['n_seasons']}, "
+                f"mean={format_float(details['mean'])}, "
+                f"median={format_float(details['median'])}, "
+                f"min={format_float(details['min'])}, "
+                f"max={format_float(details['max'])}, "
+                f"stddev={format_float(details['stddev'])}, "
+                f"water_years={details['water_years']}"
+            )
+
+        differential_inferential = north_south_differential.get("inferential")
+        if not isinstance(differential_inferential, dict):
+            raise RuntimeError("north_south_differential.inferential is missing or malformed.")
+        anova_result = differential_inferential.get("anova")
+        if isinstance(anova_result, str):
+            lines.append(f"  anova: {anova_result}")
+            lines.append(
+                "  "
+                f"failing_bins: {differential_inferential.get('failing_bins', [])}"
+            )
+        elif isinstance(anova_result, dict):
+            lines.append(
+                "  "
+                f"anova: F={format_float(anova_result['f_statistic'])}, "
+                f"p={format_float(anova_result['p_value'])}"
+            )
+        else:
+            raise RuntimeError("north_south_differential.inferential.anova malformed.")
+
+        pearson_result = differential_inferential.get("pearson")
+        if not isinstance(pearson_result, dict):
+            raise RuntimeError("north_south_differential.inferential.pearson malformed.")
+        lines.append(
+            "  "
+            f"pearson: r={format_float(pearson_result['r'])}, "
+            f"p={format_float(pearson_result['p_value'])}"
+        )
+        lines.append(
+            "  "
+            "effect_size_la_nina_minus_el_nino="
+            f"{format_float(north_south_differential['effect_size_la_nina_minus_el_nino'])}"
+        )
+
+        diff_robustness = north_south_differential.get("robustness")
+        if not isinstance(diff_robustness, dict):
+            raise RuntimeError("north_south_differential.robustness is missing or malformed.")
+        lines.append("  robustness (leave-one-out north+south)")
+        lines.append(
+            "    "
+            f"leave_one_out_run_count={diff_robustness['leave_one_out_run_count']}"
+        )
+        anova_p_value = diff_robustness.get("anova_p_value")
+        if not isinstance(anova_p_value, dict):
+            raise RuntimeError("north_south_differential.robustness.anova_p_value malformed.")
+        if isinstance(anova_p_value["leave_one_out_min"], str):
+            lines.append(
+                "    "
+                "anova_p_value: "
+                f"{anova_p_value['leave_one_out_min']}; "
+                f"failing_bins={anova_p_value['not_computed_failing_bins']}"
+            )
+        else:
+            lines.append(
+                "    "
+                "anova_p_value: "
+                f"loo_min={format_float(anova_p_value['leave_one_out_min'])}, "
+                f"loo_max={format_float(anova_p_value['leave_one_out_max'])}, "
+                f"below_{format_float(anova_p_value['below_threshold'])}="
+                f"{anova_p_value['below_threshold_count']} of {anova_p_value['below_threshold_of']}"
+            )
+        pearson_r = diff_robustness.get("pearson_r")
+        if not isinstance(pearson_r, dict):
+            raise RuntimeError("north_south_differential.robustness.pearson_r malformed.")
+        lines.append(
+            "    "
+            "pearson_r: "
+            f"loo_min={format_float(pearson_r['leave_one_out_min'])}, "
+            f"loo_max={format_float(pearson_r['leave_one_out_max'])}"
+        )
+        effect_size_robustness = diff_robustness.get("effect_size_la_nina_minus_el_nino")
+        if not isinstance(effect_size_robustness, dict):
+            raise RuntimeError(
+                "north_south_differential.robustness.effect_size_la_nina_minus_el_nino malformed."
+            )
+        lines.append(
+            "    "
+            "effect_size_la_nina_minus_el_nino: "
+            f"all={format_float(effect_size_robustness['all_stations'])}, "
+            f"loo_min={format_float(effect_size_robustness['leave_one_out_min'])}, "
+            f"loo_max={format_float(effect_size_robustness['leave_one_out_max'])}, "
+            f"sign_stability={effect_size_robustness['sign_stability']}"
+        )
 
     if isinstance(robustness, dict):
         lines.append("")
@@ -1076,6 +1393,72 @@ def print_robustness_summary(robustness: Dict[str, object]) -> None:
             )
 
 
+def print_north_south_differential_summary(
+    north_south_differential: Dict[str, object],
+) -> None:
+    print("=== North-south differential (north minus south) ===")
+    three_bin = north_south_differential["three_bin"]
+    means_text = ", ".join(
+        [
+            f"{bin_name}={format_float(three_bin[bin_name]['mean'])}"
+            for bin_name in THREE_BIN_ORDER
+        ]
+    )
+    print(f"three_bin_means: {means_text}")
+
+    inferential = north_south_differential["inferential"]
+    anova = inferential["anova"]
+    if isinstance(anova, str):
+        print(f"anova: {anova}; failing_bins={inferential['failing_bins']}")
+    else:
+        print(
+            "anova: "
+            f"F={format_float(anova['f_statistic'])}, "
+            f"p={format_float(anova['p_value'])}"
+        )
+    pearson = inferential["pearson"]
+    print(
+        "pearson: "
+        f"r={format_float(pearson['r'])}, "
+        f"p={format_float(pearson['p_value'])}"
+    )
+    print(
+        "effect_size_la_nina_minus_el_nino="
+        f"{format_float(north_south_differential['effect_size_la_nina_minus_el_nino'])}"
+    )
+
+    robustness = north_south_differential["robustness"]
+    anova_p = robustness["anova_p_value"]
+    if isinstance(anova_p["leave_one_out_min"], str):
+        print(
+            "robustness anova_p: "
+            f"{anova_p['leave_one_out_min']}; "
+            f"failing_bins={anova_p['not_computed_failing_bins']}"
+        )
+    else:
+        print(
+            "robustness anova_p: "
+            f"[{format_float(anova_p['leave_one_out_min'])}, "
+            f"{format_float(anova_p['leave_one_out_max'])}], "
+            f"below_{format_float(anova_p['below_threshold'])}="
+            f"{anova_p['below_threshold_count']} of {anova_p['below_threshold_of']}"
+        )
+    pearson_r = robustness["pearson_r"]
+    print(
+        "robustness pearson_r: "
+        f"[{format_float(pearson_r['leave_one_out_min'])}, "
+        f"{format_float(pearson_r['leave_one_out_max'])}]"
+    )
+    effect_size = robustness["effect_size_la_nina_minus_el_nino"]
+    print(
+        "robustness effect_size: "
+        f"[{format_float(effect_size['leave_one_out_min'])}, "
+        f"{format_float(effect_size['leave_one_out_max'])}], "
+        f"sign_stability={effect_size['sign_stability']}"
+    )
+    print(f"robustness leave_one_out_runs={robustness['leave_one_out_run_count']}")
+
+
 def main() -> None:
     stations, stations_run_utc = load_station_candidates(STATIONS_FILE)
     region_by_triplet_all = {
@@ -1190,6 +1573,29 @@ def main() -> None:
     gate_five = build_gate(statewide_five, FIVE_BIN_ORDER)
     gate_three = build_gate(statewide_three, THREE_BIN_ORDER)
 
+    north_south_differential_by_wy = compute_north_south_differential_by_wy(
+        regional_index_by_wy=regional_index_by_wy,
+        start_wy=COMMON_START_WY,
+        end_wy=resolved_end_wy,
+    )
+    north_south_differential = compute_north_south_differential(
+        differential_by_wy=north_south_differential_by_wy,
+        three_bins_by_wy=three_bins_by_wy,
+        oni_by_wy=oni_oct_mar_by_wy,
+    )
+    north_south_differential["robustness"] = compute_north_south_differential_robustness(
+        station_percent_by_triplet=station_percent,
+        region_by_triplet=region_by_triplet,
+        station_name_by_triplet=station_name_by_triplet,
+        start_wy=COMMON_START_WY,
+        end_wy=resolved_end_wy,
+        three_bins_by_wy=three_bins_by_wy,
+        oni_by_wy=oni_oct_mar_by_wy,
+        all_stations_effect_size=float(
+            north_south_differential["effect_size_la_nina_minus_el_nino"]
+        ),
+    )
+
     station_count = len(surviving_triplets)
 
     run_utc = datetime.now(timezone.utc).isoformat()
@@ -1225,6 +1631,7 @@ def main() -> None:
         },
         "regional": regional_results,
         "station_medians_april1_swe": station_medians,
+        "north_south_differential": north_south_differential,
     }
 
     stats_payload["inferential"] = {
@@ -1267,6 +1674,7 @@ def main() -> None:
         surviving_region_counts=region_counts,
     )
     print_robustness_summary(stats_payload["robustness"])
+    print_north_south_differential_summary(stats_payload["north_south_differential"])
     print(f"station_count={station_count}")
     print(f"region_counts={region_counts}")
     print(f"water_year_range=WY{COMMON_START_WY}-WY{resolved_end_wy}")
