@@ -29,6 +29,10 @@ from scipy.stats import f_oneway, pearsonr
 COMMON_START_WY = 1981
 END_WY_RULE = "latest water year with at least one April 1 SWE observation"
 MIN_SEASONS_FOR_TEST = 8
+MIN_STATION_MEDIAN_SWE_IN = 5.0
+# Percent of median is unstable at stations with very small April 1 medians:
+# a 1-2 inch SWE shift can produce an outsized percent swing, and in an
+# equally weighted index that swing gets the same influence as deep-snow sites.
 
 ONI_THRESHOLDS = {
     "five_bin": {
@@ -267,11 +271,15 @@ def fetch_station_april1_series(
 
 def compute_percent_of_station_median(
     station_series_by_triplet: Dict[str, Dict[int, float]],
+    station_name_by_triplet: Dict[str, str],
+    region_by_triplet: Dict[str, str],
+    min_station_median_swe_in: float,
     start_wy: int,
     end_wy: int,
-) -> Tuple[Dict[str, Dict[int, float]], Dict[str, float]]:
+) -> Tuple[Dict[str, Dict[int, float]], Dict[str, float], List[Dict[str, object]]]:
     station_percent: Dict[str, Dict[int, float]] = {}
     station_medians: Dict[str, float] = {}
+    excluded_stations: List[Dict[str, object]] = []
 
     for triplet, wy_series in station_series_by_triplet.items():
         trimmed = {wy: value for wy, value in wy_series.items() if start_wy <= wy <= end_wy}
@@ -284,12 +292,27 @@ def compute_percent_of_station_median(
             raise RuntimeError(
                 f"Station {triplet} median April 1 SWE is zero, cannot compute percent-of-median."
             )
+        if median_value < min_station_median_swe_in:
+            excluded_stations.append(
+                {
+                    "triplet": triplet,
+                    "name": station_name_by_triplet[triplet],
+                    "region": region_by_triplet[triplet],
+                    "median": median_value,
+                }
+            )
+            continue
         station_medians[triplet] = median_value
         station_percent[triplet] = {
             wy: (value / median_value) * 100.0 for wy, value in trimmed.items()
         }
 
-    return station_percent, station_medians
+    if not station_percent:
+        raise RuntimeError(
+            "Minimum station median SWE filter removed all stations; cannot compute indices."
+        )
+
+    return station_percent, station_medians, excluded_stations
 
 
 def compute_seasonal_indices(
@@ -465,6 +488,19 @@ def write_text_report(stats_payload: Dict[str, object], path: Path) -> None:
     lines.append(f"  season_count: {provenance['season_count']}")
     lines.append(f"  oni_thresholds: {provenance['oni_thresholds']}")
     lines.append(f"  min_seasons_for_test: {provenance['min_seasons_for_test']}")
+    lines.append(
+        f"  MIN_STATION_MEDIAN_SWE_IN: {format_float(provenance['MIN_STATION_MEDIAN_SWE_IN'])}"
+    )
+    lines.append(
+        "  "
+        "excluded_station_count_min_median_filter: "
+        f"{provenance['excluded_station_count_min_median_filter']}"
+    )
+    lines.append(
+        "  "
+        "excluded_stations_min_median_filter: "
+        f"{provenance['excluded_stations_min_median_filter']}"
+    )
     lines.append("")
 
     lines.append("Gate")
@@ -645,10 +681,37 @@ def print_gate_table(stats_payload: Dict[str, object]) -> None:
         print(f"  failing_bins={scheme_gate['failing_bins']}")
 
 
+def print_station_median_filter_summary(
+    min_station_median_swe_in: float,
+    excluded_stations: List[Dict[str, object]],
+    surviving_station_count: int,
+    surviving_region_counts: Dict[str, int],
+) -> None:
+    print("=== Minimum station median SWE filter ===")
+    print(f"MIN_STATION_MEDIAN_SWE_IN={format_float(min_station_median_swe_in)}")
+    if excluded_stations:
+        for station in excluded_stations:
+            print(
+                "excluded_station="
+                f"{station['triplet']} | "
+                f"{station['name']} | "
+                f"{station['region']} | "
+                f"median={format_float(float(station['median']))}"
+            )
+    else:
+        print("excluded_station=none")
+    print(f"excluded_station_count={len(excluded_stations)}")
+    print(f"surviving_station_count={surviving_station_count}")
+    print(f"surviving_region_counts={surviving_region_counts}")
+
+
 def main() -> None:
     stations, stations_run_utc = load_station_candidates(STATIONS_FILE)
-    region_by_triplet = {
+    region_by_triplet_all = {
         str(station["triplet"]): str(station["region"]) for station in stations
+    }
+    station_name_by_triplet = {
+        str(station["triplet"]): str(station["name"]) for station in stations
     }
 
     session = requests.Session()
@@ -680,11 +743,33 @@ def main() -> None:
         end_wy=resolved_end_wy,
     )
 
-    station_percent, station_medians = compute_percent_of_station_median(
+    station_percent, station_medians, excluded_stations = compute_percent_of_station_median(
         station_series_by_triplet=station_series_by_triplet,
+        station_name_by_triplet=station_name_by_triplet,
+        region_by_triplet=region_by_triplet_all,
+        min_station_median_swe_in=MIN_STATION_MEDIAN_SWE_IN,
         start_wy=COMMON_START_WY,
         end_wy=resolved_end_wy,
     )
+    surviving_triplets = set(station_percent.keys())
+    region_by_triplet = {
+        triplet: region
+        for triplet, region in region_by_triplet_all.items()
+        if triplet in surviving_triplets
+    }
+
+    region_counts = {region: 0 for region in REGION_ORDER}
+    for region in region_by_triplet.values():
+        region_counts[region] += 1
+    sparse_regions = [region for region in REGION_ORDER if region_counts[region] < 3]
+    if sparse_regions:
+        sparse_counts_text = ", ".join(
+            [f"{region}={region_counts[region]}" for region in sparse_regions]
+        )
+        raise RuntimeError(
+            "Minimum station median SWE filter leaves fewer than 3 stations in "
+            f"region(s): {sparse_counts_text}."
+        )
     (
         statewide_index_by_wy,
         statewide_counts_by_wy,
@@ -734,10 +819,7 @@ def main() -> None:
     gate_five = build_gate(statewide_five, FIVE_BIN_ORDER)
     gate_three = build_gate(statewide_three, THREE_BIN_ORDER)
 
-    station_count = len(stations)
-    region_counts = {region: 0 for region in REGION_ORDER}
-    for station in stations:
-        region_counts[str(station["region"])] += 1
+    station_count = len(surviving_triplets)
 
     run_utc = datetime.now(timezone.utc).isoformat()
     stats_payload: Dict[str, object] = {
@@ -755,6 +837,9 @@ def main() -> None:
             "season_count": resolved_end_wy - COMMON_START_WY + 1,
             "oni_thresholds": ONI_THRESHOLDS,
             "min_seasons_for_test": MIN_SEASONS_FOR_TEST,
+            "MIN_STATION_MEDIAN_SWE_IN": MIN_STATION_MEDIAN_SWE_IN,
+            "excluded_station_count_min_median_filter": len(excluded_stations),
+            "excluded_stations_min_median_filter": excluded_stations,
         },
         "gate": {
             "five_bin": gate_five,
@@ -791,6 +876,12 @@ def main() -> None:
     }
 
     print_gate_table(stats_payload)
+    print_station_median_filter_summary(
+        min_station_median_swe_in=MIN_STATION_MEDIAN_SWE_IN,
+        excluded_stations=excluded_stations,
+        surviving_station_count=station_count,
+        surviving_region_counts=region_counts,
+    )
     print(f"station_count={station_count}")
     print(f"region_counts={region_counts}")
     print(f"water_year_range=WY{COMMON_START_WY}-WY{resolved_end_wy}")
