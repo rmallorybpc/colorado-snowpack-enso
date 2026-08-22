@@ -1,7 +1,7 @@
 Colorado snowpack ENSO analysis (single-run computed output)
 
 Provenance
-  run_utc: 2026-08-22T02:02:01.131604+00:00
+  run_utc: 2026-08-22T02:17:33.312895+00:00
   oni_source_url: https://www.cpc.ncep.noaa.gov/data/indices/oni.ascii.txt
   awdb_endpoint: https://wcc.sc.egov.usda.gov/awdbRestApi/services/v1
   stations_file_path: /workspaces/colorado-snowpack-enso/stations_candidate.json
@@ -84,3 +84,55 @@ Inferential (gated by scheme)
   three_bin
     anova: F=0.9064, p=0.4116
     pearson: r=-0.0034, p=0.9823
+
+Robustness (three-bin leave-one-station-out)
+  statewide
+    station_count=44, leave_one_out_run_count=44
+    La Nina: all=104.5444, loo_min=104.2640, loo_max=104.8531, loo_range=0.5890
+      loo_min_held_out_station=618:CO:SNTL | Mc Clure Pass
+      loo_max_held_out_station=430:CO:SNTL | Culebra #2
+    Neutral: all=93.9071, loo_min=93.6618, loo_max=94.1462, loo_range=0.4844
+      loo_min_held_out_station=380:CO:SNTL | Butte
+      loo_max_held_out_station=564:CO:SNTL | Lake Eldora
+    El Nino: all=103.2130, loo_min=102.7822, loo_max=103.4334, loo_range=0.6512
+      loo_min_held_out_station=857:CO:SNTL | Whiskey Ck
+      loo_max_held_out_station=457:CO:SNTL | Dry Lake
+    gradient_la_nina_minus_el_nino: all=1.3313, loo_min=1.0384, loo_max=2.0343, sign_stability=44 of 44
+    anova_p_value: all=0.4116, loo_min=0.3943, loo_max=0.4309, below_0.0500=0 of 44
+    pearson_r: all=-0.0034, loo_min=-0.0150, loo_max=0.0020
+  north
+    station_count=21, leave_one_out_run_count=21
+    La Nina: all=104.5204, loo_min=104.2069, loo_max=105.0154, loo_range=0.8085
+      loo_min_held_out_station=551:CO:SNTL | Joe Wright
+      loo_max_held_out_station=663:CO:SNTL | Niwot
+    Neutral: all=94.1054, loo_min=93.6924, loo_max=94.6354, loo_range=0.9429
+      loo_min_held_out_station=322:CO:SNTL | Bear Lake
+      loo_max_held_out_station=564:CO:SNTL | Lake Eldora
+    El Nino: all=98.6001, loo_min=98.1512, loo_max=98.8434, loo_range=0.6922
+      loo_min_held_out_station=564:CO:SNTL | Lake Eldora
+      loo_max_held_out_station=457:CO:SNTL | Dry Lake
+    gradient_la_nina_minus_el_nino: all=5.9203, loo_min=5.5199, loo_max=6.6088, sign_stability=21 of 21
+  central
+    station_count=11, leave_one_out_run_count=11
+    La Nina: all=107.7205, loo_min=106.8327, loo_max=108.2981, loo_range=1.4654
+      loo_min_held_out_station=618:CO:SNTL | Mc Clure Pass
+      loo_max_held_out_station=701:CO:SNTL | Porphyry Creek
+    Neutral: all=95.4503, loo_min=94.5558, loo_max=96.3477, loo_range=1.7919
+      loo_min_held_out_station=380:CO:SNTL | Butte
+      loo_max_held_out_station=701:CO:SNTL | Porphyry Creek
+    El Nino: all=105.0164, loo_min=104.2000, loo_max=105.6607, loo_range=1.4607
+      loo_min_held_out_station=618:CO:SNTL | Mc Clure Pass
+      loo_max_held_out_station=680:CO:SNTL | Park Cone
+    gradient_la_nina_minus_el_nino: all=2.7041, loo_min=1.8493, loo_max=3.4087, sign_stability=11 of 11
+  south
+    station_count=12, leave_one_out_run_count=12
+    La Nina: all=101.6747, loo_min=100.8016, loo_max=102.6206, loo_range=1.8190
+      loo_min_held_out_station=580:CO:SNTL | Lily Pond
+      loo_max_held_out_station=430:CO:SNTL | Culebra #2
+    Neutral: all=92.0615, loo_min=91.3852, loo_max=92.6786, loo_range=1.2934
+      loo_min_held_out_station=589:CO:SNTL | Lone Cone
+      loo_max_held_out_station=762:CO:SNTL | Slumgullion
+    El Nino: all=109.6324, loo_min=108.5320, loo_max=110.2523, loo_range=1.7203
+      loo_min_held_out_station=857:CO:SNTL | Whiskey Ck
+      loo_max_held_out_station=586:CO:SNTL | Lizard Head Pass
+    gradient_la_nina_minus_el_nino: all=-7.9576, loo_min=-8.8826, loo_max=-6.0540, sign_stability=12 of 12

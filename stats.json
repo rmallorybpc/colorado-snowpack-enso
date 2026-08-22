@@ -1,6 +1,6 @@
 {
   "provenance": {
-    "run_utc": "2026-08-22T02:02:01.131604+00:00",
+    "run_utc": "2026-08-22T02:17:33.312895+00:00",
     "oni_source_url": "https://www.cpc.ncep.noaa.gov/data/indices/oni.ascii.txt",
     "awdb_endpoint": "https://wcc.sc.egov.usda.gov/awdbRestApi/services/v1",
     "stations_file_path": "/workspaces/colorado-snowpack-enso/stations_candidate.json",
@@ -1575,6 +1575,250 @@
         "p_value": 0.9822956619570812
       },
       "failing_bins": []
+    }
+  },
+  "robustness": {
+    "scheme": "three_bin",
+    "scopes": {
+      "statewide": {
+        "station_count": 44,
+        "leave_one_out_run_count": 44,
+        "three_bin": {
+          "La Nina": {
+            "all_stations_mean": 104.5443530926316,
+            "leave_one_out_min_mean": 104.26402733535005,
+            "leave_one_out_max_mean": 104.85306266990578,
+            "leave_one_out_range": 0.5890353345557315,
+            "leave_one_out_min_held_out_station": {
+              "triplet": "618:CO:SNTL",
+              "name": "Mc Clure Pass"
+            },
+            "leave_one_out_max_held_out_station": {
+              "triplet": "430:CO:SNTL",
+              "name": "Culebra #2"
+            }
+          },
+          "Neutral": {
+            "all_stations_mean": 93.90708205350012,
+            "leave_one_out_min_mean": 93.66184350982944,
+            "leave_one_out_max_mean": 94.14620739143288,
+            "leave_one_out_range": 0.4843638816034428,
+            "leave_one_out_min_held_out_station": {
+              "triplet": "380:CO:SNTL",
+              "name": "Butte"
+            },
+            "leave_one_out_max_held_out_station": {
+              "triplet": "564:CO:SNTL",
+              "name": "Lake Eldora"
+            }
+          },
+          "El Nino": {
+            "all_stations_mean": 103.21300334128483,
+            "leave_one_out_min_mean": 102.78223339314933,
+            "leave_one_out_max_mean": 103.4334320724488,
+            "leave_one_out_range": 0.6511986792994691,
+            "leave_one_out_min_held_out_station": {
+              "triplet": "857:CO:SNTL",
+              "name": "Whiskey Ck"
+            },
+            "leave_one_out_max_held_out_station": {
+              "triplet": "457:CO:SNTL",
+              "name": "Dry Lake"
+            }
+          }
+        },
+        "gradient_la_nina_minus_el_nino": {
+          "all_stations": 1.3313497513467638,
+          "leave_one_out_min": 1.0383986514213746,
+          "leave_one_out_max": 2.0343478721791257,
+          "sign_matches_all_stations_count": 44,
+          "sign_matches_all_stations_of": 44,
+          "sign_stability": "44 of 44"
+        },
+        "inferential": {
+          "anova_p_value": {
+            "all_stations": 0.4115629119550682,
+            "leave_one_out_min": 0.3943301252814895,
+            "leave_one_out_max": 0.4308864699371437,
+            "below_threshold": 0.05,
+            "below_threshold_count": 0,
+            "below_threshold_of": 44
+          },
+          "pearson_r": {
+            "all_stations": -0.0033644577182439413,
+            "leave_one_out_min": -0.014984296015254903,
+            "leave_one_out_max": 0.0019967534095605283
+          }
+        }
+      },
+      "north": {
+        "station_count": 21,
+        "leave_one_out_run_count": 21,
+        "three_bin": {
+          "La Nina": {
+            "all_stations_mean": 104.52044802241386,
+            "leave_one_out_min_mean": 104.20691346150925,
+            "leave_one_out_max_mean": 105.0153947263234,
+            "leave_one_out_range": 0.808481264814148,
+            "leave_one_out_min_held_out_station": {
+              "triplet": "551:CO:SNTL",
+              "name": "Joe Wright"
+            },
+            "leave_one_out_max_held_out_station": {
+              "triplet": "663:CO:SNTL",
+              "name": "Niwot"
+            }
+          },
+          "Neutral": {
+            "all_stations_mean": 94.10543371363764,
+            "leave_one_out_min_mean": 93.69243488917247,
+            "leave_one_out_max_mean": 94.63536399442042,
+            "leave_one_out_range": 0.9429291052479414,
+            "leave_one_out_min_held_out_station": {
+              "triplet": "322:CO:SNTL",
+              "name": "Bear Lake"
+            },
+            "leave_one_out_max_held_out_station": {
+              "triplet": "564:CO:SNTL",
+              "name": "Lake Eldora"
+            }
+          },
+          "El Nino": {
+            "all_stations_mean": 98.6001386368302,
+            "leave_one_out_min_mean": 98.15122818975433,
+            "leave_one_out_max_mean": 98.84341717360998,
+            "leave_one_out_range": 0.6921889838556439,
+            "leave_one_out_min_held_out_station": {
+              "triplet": "564:CO:SNTL",
+              "name": "Lake Eldora"
+            },
+            "leave_one_out_max_held_out_station": {
+              "triplet": "457:CO:SNTL",
+              "name": "Dry Lake"
+            }
+          }
+        },
+        "gradient_la_nina_minus_el_nino": {
+          "all_stations": 5.920309385583664,
+          "leave_one_out_min": 5.519912502455924,
+          "leave_one_out_max": 6.608755133747309,
+          "sign_matches_all_stations_count": 21,
+          "sign_matches_all_stations_of": 21,
+          "sign_stability": "21 of 21"
+        }
+      },
+      "central": {
+        "station_count": 11,
+        "leave_one_out_run_count": 11,
+        "three_bin": {
+          "La Nina": {
+            "all_stations_mean": 107.72048067276508,
+            "leave_one_out_min_mean": 106.83269267446781,
+            "leave_one_out_max_mean": 108.29808429559714,
+            "leave_one_out_range": 1.4653916211293279,
+            "leave_one_out_min_held_out_station": {
+              "triplet": "618:CO:SNTL",
+              "name": "Mc Clure Pass"
+            },
+            "leave_one_out_max_held_out_station": {
+              "triplet": "701:CO:SNTL",
+              "name": "Porphyry Creek"
+            }
+          },
+          "Neutral": {
+            "all_stations_mean": 95.45026882036747,
+            "leave_one_out_min_mean": 94.55578952956472,
+            "leave_one_out_max_mean": 96.34767665478518,
+            "leave_one_out_range": 1.7918871252204553,
+            "leave_one_out_min_held_out_station": {
+              "triplet": "380:CO:SNTL",
+              "name": "Butte"
+            },
+            "leave_one_out_max_held_out_station": {
+              "triplet": "701:CO:SNTL",
+              "name": "Porphyry Creek"
+            }
+          },
+          "El Nino": {
+            "all_stations_mean": 105.01642822177267,
+            "leave_one_out_min_mean": 104.2000382570647,
+            "leave_one_out_max_mean": 105.66069127612242,
+            "leave_one_out_range": 1.460653019057716,
+            "leave_one_out_min_held_out_station": {
+              "triplet": "618:CO:SNTL",
+              "name": "Mc Clure Pass"
+            },
+            "leave_one_out_max_held_out_station": {
+              "triplet": "680:CO:SNTL",
+              "name": "Park Cone"
+            }
+          }
+        },
+        "gradient_la_nina_minus_el_nino": {
+          "all_stations": 2.704052450992407,
+          "leave_one_out_min": 1.8492503992425497,
+          "leave_one_out_max": 3.408729996561135,
+          "sign_matches_all_stations_count": 11,
+          "sign_matches_all_stations_of": 11,
+          "sign_stability": "11 of 11"
+        }
+      },
+      "south": {
+        "station_count": 12,
+        "leave_one_out_run_count": 12,
+        "three_bin": {
+          "La Nina": {
+            "all_stations_mean": 101.6747366837236,
+            "leave_one_out_min_mean": 100.801594848153,
+            "leave_one_out_max_mean": 102.6206362668038,
+            "leave_one_out_range": 1.819041418650798,
+            "leave_one_out_min_held_out_station": {
+              "triplet": "580:CO:SNTL",
+              "name": "Lily Pond"
+            },
+            "leave_one_out_max_held_out_station": {
+              "triplet": "430:CO:SNTL",
+              "name": "Culebra #2"
+            }
+          },
+          "Neutral": {
+            "all_stations_mean": 92.06152554185196,
+            "leave_one_out_min_mean": 91.38519751957959,
+            "leave_one_out_max_mean": 92.6786067874025,
+            "leave_one_out_range": 1.2934092678229092,
+            "leave_one_out_min_held_out_station": {
+              "triplet": "589:CO:SNTL",
+              "name": "Lone Cone"
+            },
+            "leave_one_out_max_held_out_station": {
+              "triplet": "762:CO:SNTL",
+              "name": "Slumgullion"
+            }
+          },
+          "El Nino": {
+            "all_stations_mean": 109.63237710029992,
+            "leave_one_out_min_mean": 108.53203764477163,
+            "leave_one_out_max_mean": 110.25233446681264,
+            "leave_one_out_range": 1.720296822041007,
+            "leave_one_out_min_held_out_station": {
+              "triplet": "857:CO:SNTL",
+              "name": "Whiskey Ck"
+            },
+            "leave_one_out_max_held_out_station": {
+              "triplet": "586:CO:SNTL",
+              "name": "Lizard Head Pass"
+            }
+          }
+        },
+        "gradient_la_nina_minus_el_nino": {
+          "all_stations": -7.957640416576325,
+          "leave_one_out_min": -8.882589261265096,
+          "leave_one_out_max": -6.054010504951961,
+          "sign_matches_all_stations_count": 12,
+          "sign_matches_all_stations_of": 12,
+          "sign_stability": "12 of 12"
+        }
+      }
     }
   }
 }

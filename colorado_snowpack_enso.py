@@ -30,6 +30,7 @@ COMMON_START_WY = 1981
 END_WY_RULE = "latest water year with at least one April 1 SWE observation"
 MIN_SEASONS_FOR_TEST = 8
 MIN_STATION_MEDIAN_SWE_IN = 5.0
+ANOVA_SIGNIFICANCE_P_THRESHOLD = 0.05
 # Percent of median is unstable at stations with very small April 1 medians:
 # a 1-2 inch SWE shift can produce an outsized percent swing, and in an
 # equally weighted index that swing gets the same influence as deep-snow sites.
@@ -387,6 +388,230 @@ def compute_bin_results(
     return out
 
 
+def compute_scope_index_by_wy(
+    station_percent_by_triplet: Dict[str, Dict[int, float]],
+    scope_triplets: List[str],
+    start_wy: int,
+    end_wy: int,
+    label: str,
+) -> Dict[int, float]:
+    series_by_wy: Dict[int, float] = {}
+    for wy in range(start_wy, end_wy + 1):
+        values = [
+            station_percent_by_triplet[triplet][wy]
+            for triplet in scope_triplets
+            if wy in station_percent_by_triplet[triplet]
+        ]
+        if not values:
+            raise RuntimeError(
+                f"No station values available to compute {label} index for WY{wy}."
+            )
+        series_by_wy[wy] = statistics.fmean(values)
+    return series_by_wy
+
+
+def sign_of(value: float) -> int:
+    if value > 0:
+        return 1
+    if value < 0:
+        return -1
+    return 0
+
+
+def compute_three_bin_robustness(
+    station_percent_by_triplet: Dict[str, Dict[int, float]],
+    region_by_triplet: Dict[str, str],
+    station_name_by_triplet: Dict[str, str],
+    start_wy: int,
+    end_wy: int,
+    three_bins_by_wy: Dict[int, str],
+    oni_by_wy: Dict[int, float],
+    statewide_three: Dict[str, Dict[str, object]],
+    regional_results: Dict[str, Dict[str, object]],
+    statewide_inferential_three: Dict[str, object],
+) -> Dict[str, object]:
+    scopes: Dict[str, List[str]] = {
+        "statewide": sorted(station_percent_by_triplet.keys()),
+    }
+    for region in REGION_ORDER:
+        scopes[region] = sorted(
+            [
+                triplet
+                for triplet, triplet_region in region_by_triplet.items()
+                if triplet_region == region
+            ]
+        )
+
+    all_station_bin_means: Dict[str, Dict[str, float]] = {
+        "statewide": {
+            bin_name: float(statewide_three[bin_name]["mean"]) for bin_name in THREE_BIN_ORDER
+        }
+    }
+    for region in REGION_ORDER:
+        all_station_bin_means[region] = {
+            bin_name: float(regional_results[region]["three_bin"][bin_name]["mean"])
+            for bin_name in THREE_BIN_ORDER
+        }
+
+    robustness_scopes: Dict[str, Dict[str, object]] = {}
+    for scope_name, scope_triplets in scopes.items():
+        if len(scope_triplets) < 3:
+            raise RuntimeError(
+                f"Scope {scope_name} has fewer than 3 stations before robustness checks."
+            )
+
+        loo_means: Dict[str, List[float]] = {bin_name: [] for bin_name in THREE_BIN_ORDER}
+        loo_station_for_mean: Dict[str, List[str]] = {
+            bin_name: [] for bin_name in THREE_BIN_ORDER
+        }
+        loo_gradients: List[float] = []
+        loo_anova_ps: List[float] = []
+        loo_pearson_rs: List[float] = []
+
+        for held_out_triplet in scope_triplets:
+            remaining_triplets = [
+                triplet for triplet in scope_triplets if triplet != held_out_triplet
+            ]
+            if len(remaining_triplets) < 3:
+                raise RuntimeError(
+                    "Leave-one-out run would leave fewer than 3 stations "
+                    f"in scope {scope_name} after removing {held_out_triplet}."
+                )
+
+            if scope_name == "statewide":
+                remaining_region_counts = {region: 0 for region in REGION_ORDER}
+                for triplet in remaining_triplets:
+                    remaining_region_counts[region_by_triplet[triplet]] += 1
+                sparse_regions = [
+                    region
+                    for region in REGION_ORDER
+                    if remaining_region_counts[region] < 3
+                ]
+                if sparse_regions:
+                    sparse_text = ", ".join(
+                        [
+                            f"{region}={remaining_region_counts[region]}"
+                            for region in sparse_regions
+                        ]
+                    )
+                    raise RuntimeError(
+                        "Leave-one-out statewide run would leave fewer than 3 stations "
+                        f"in region(s) after removing {held_out_triplet}: {sparse_text}."
+                    )
+
+            run_series = compute_scope_index_by_wy(
+                station_percent_by_triplet=station_percent_by_triplet,
+                scope_triplets=remaining_triplets,
+                start_wy=start_wy,
+                end_wy=end_wy,
+                label=f"{scope_name} leave-one-out",
+            )
+            run_bins = compute_bin_results(
+                series_by_wy=run_series,
+                bins_by_wy=three_bins_by_wy,
+                bin_order=THREE_BIN_ORDER,
+                label=f"{scope_name} three-bin leave-one-out",
+            )
+
+            for bin_name in THREE_BIN_ORDER:
+                loo_means[bin_name].append(float(run_bins[bin_name]["mean"]))
+                loo_station_for_mean[bin_name].append(held_out_triplet)
+
+            run_gradient = float(run_bins["La Nina"]["mean"]) - float(
+                run_bins["El Nino"]["mean"]
+            )
+            loo_gradients.append(run_gradient)
+
+            if scope_name == "statewide":
+                groups = [list(run_bins[bin_name]["values"]) for bin_name in THREE_BIN_ORDER]
+                run_anova = f_oneway(*groups)
+                years = sorted(run_series)
+                oni_values = [oni_by_wy[wy] for wy in years]
+                index_values = [run_series[wy] for wy in years]
+                run_corr = pearsonr(oni_values, index_values)
+                loo_anova_ps.append(float(run_anova.pvalue))
+                loo_pearson_rs.append(float(run_corr.statistic))
+
+        all_gradient = (
+            all_station_bin_means[scope_name]["La Nina"]
+            - all_station_bin_means[scope_name]["El Nino"]
+        )
+        all_gradient_sign = sign_of(all_gradient)
+        sign_match_count = sum(
+            1 for gradient in loo_gradients if sign_of(gradient) == all_gradient_sign
+        )
+
+        scope_bins: Dict[str, Dict[str, object]] = {}
+        for bin_name in THREE_BIN_ORDER:
+            means = loo_means[bin_name]
+            held_out_ids = loo_station_for_mean[bin_name]
+            min_index = min(range(len(means)), key=lambda idx: means[idx])
+            max_index = max(range(len(means)), key=lambda idx: means[idx])
+            min_triplet = held_out_ids[min_index]
+            max_triplet = held_out_ids[max_index]
+            scope_bins[bin_name] = {
+                "all_stations_mean": all_station_bin_means[scope_name][bin_name],
+                "leave_one_out_min_mean": means[min_index],
+                "leave_one_out_max_mean": means[max_index],
+                "leave_one_out_range": means[max_index] - means[min_index],
+                "leave_one_out_min_held_out_station": {
+                    "triplet": min_triplet,
+                    "name": station_name_by_triplet[min_triplet],
+                },
+                "leave_one_out_max_held_out_station": {
+                    "triplet": max_triplet,
+                    "name": station_name_by_triplet[max_triplet],
+                },
+            }
+
+        scope_result: Dict[str, object] = {
+            "station_count": len(scope_triplets),
+            "leave_one_out_run_count": len(scope_triplets),
+            "three_bin": scope_bins,
+            "gradient_la_nina_minus_el_nino": {
+                "all_stations": all_gradient,
+                "leave_one_out_min": min(loo_gradients),
+                "leave_one_out_max": max(loo_gradients),
+                "sign_matches_all_stations_count": sign_match_count,
+                "sign_matches_all_stations_of": len(loo_gradients),
+                "sign_stability": f"{sign_match_count} of {len(loo_gradients)}",
+            },
+        }
+
+        if scope_name == "statewide":
+            if isinstance(statewide_inferential_three["anova"], str):
+                raise RuntimeError(
+                    "Three-bin inferential metrics are not available for statewide robustness."
+                )
+            below_threshold_count = sum(
+                1
+                for p_value in loo_anova_ps
+                if p_value < ANOVA_SIGNIFICANCE_P_THRESHOLD
+            )
+            scope_result["inferential"] = {
+                "anova_p_value": {
+                    "all_stations": float(statewide_inferential_three["anova"]["p_value"]),
+                    "leave_one_out_min": min(loo_anova_ps),
+                    "leave_one_out_max": max(loo_anova_ps),
+                    "below_threshold": ANOVA_SIGNIFICANCE_P_THRESHOLD,
+                    "below_threshold_count": below_threshold_count,
+                    "below_threshold_of": len(loo_anova_ps),
+                },
+                "pearson_r": {
+                    "all_stations": float(statewide_inferential_three["pearson"]["r"]),
+                    "leave_one_out_min": min(loo_pearson_rs),
+                    "leave_one_out_max": max(loo_pearson_rs),
+                },
+            }
+
+        robustness_scopes[scope_name] = scope_result
+
+    return {
+        "scheme": "three_bin",
+        "scopes": robustness_scopes,
+    }
+
+
 def build_gate(bin_results: Dict[str, Dict[str, object]], bin_order: Iterable[str]) -> Dict[str, object]:
     season_counts = {
         bin_name: int(bin_results[bin_name]["n_seasons"]) for bin_name in bin_order
@@ -471,6 +696,7 @@ def write_text_report(stats_payload: Dict[str, object], path: Path) -> None:
     statewide = stats_payload["statewide"]
     regional = stats_payload["regional"]
     inferential = stats_payload["inferential"]
+    robustness = stats_payload.get("robustness")
 
     lines.append("Colorado snowpack ENSO analysis (single-run computed output)")
     lines.append("")
@@ -573,6 +799,90 @@ def write_text_report(stats_payload: Dict[str, object], path: Path) -> None:
                 f"pearson: r={format_float(result['pearson']['r'])}, "
                 f"p={format_float(result['pearson']['p_value'])}"
             )
+
+    if isinstance(robustness, dict):
+        lines.append("")
+        lines.append("Robustness (three-bin leave-one-station-out)")
+        scopes = robustness.get("scopes")
+        if not isinstance(scopes, dict):
+            raise RuntimeError("robustness.scopes is missing or malformed.")
+        for scope_name in ("statewide",) + tuple(REGION_ORDER):
+            scope_result = scopes.get(scope_name)
+            if not isinstance(scope_result, dict):
+                raise RuntimeError(
+                    f"robustness.scopes.{scope_name} is missing or malformed."
+                )
+            lines.append(f"  {scope_name}")
+            lines.append(
+                "    "
+                f"station_count={scope_result['station_count']}, "
+                f"leave_one_out_run_count={scope_result['leave_one_out_run_count']}"
+            )
+            three_bin = scope_result.get("three_bin")
+            if not isinstance(three_bin, dict):
+                raise RuntimeError(f"robustness three_bin block missing for {scope_name}.")
+            for bin_name in THREE_BIN_ORDER:
+                bin_result = three_bin.get(bin_name)
+                if not isinstance(bin_result, dict):
+                    raise RuntimeError(
+                        f"robustness bin block missing for {scope_name} {bin_name}."
+                    )
+                min_station = bin_result["leave_one_out_min_held_out_station"]
+                max_station = bin_result["leave_one_out_max_held_out_station"]
+                lines.append(
+                    "    "
+                    f"{bin_name}: all={format_float(bin_result['all_stations_mean'])}, "
+                    f"loo_min={format_float(bin_result['leave_one_out_min_mean'])}, "
+                    f"loo_max={format_float(bin_result['leave_one_out_max_mean'])}, "
+                    f"loo_range={format_float(bin_result['leave_one_out_range'])}"
+                )
+                lines.append(
+                    "      "
+                    "loo_min_held_out_station="
+                    f"{min_station['triplet']} | {min_station['name']}"
+                )
+                lines.append(
+                    "      "
+                    "loo_max_held_out_station="
+                    f"{max_station['triplet']} | {max_station['name']}"
+                )
+
+            gradient = scope_result.get("gradient_la_nina_minus_el_nino")
+            if not isinstance(gradient, dict):
+                raise RuntimeError(
+                    f"robustness gradient block missing for scope {scope_name}."
+                )
+            lines.append(
+                "    "
+                "gradient_la_nina_minus_el_nino: "
+                f"all={format_float(gradient['all_stations'])}, "
+                f"loo_min={format_float(gradient['leave_one_out_min'])}, "
+                f"loo_max={format_float(gradient['leave_one_out_max'])}, "
+                f"sign_stability={gradient['sign_stability']}"
+            )
+
+            if scope_name == "statewide":
+                inferential_scope = scope_result.get("inferential")
+                if not isinstance(inferential_scope, dict):
+                    raise RuntimeError("robustness statewide inferential block missing.")
+                anova_p = inferential_scope["anova_p_value"]
+                pearson_r = inferential_scope["pearson_r"]
+                lines.append(
+                    "    "
+                    "anova_p_value: "
+                    f"all={format_float(anova_p['all_stations'])}, "
+                    f"loo_min={format_float(anova_p['leave_one_out_min'])}, "
+                    f"loo_max={format_float(anova_p['leave_one_out_max'])}, "
+                    f"below_{format_float(anova_p['below_threshold'])}="
+                    f"{anova_p['below_threshold_count']} of {anova_p['below_threshold_of']}"
+                )
+                lines.append(
+                    "    "
+                    "pearson_r: "
+                    f"all={format_float(pearson_r['all_stations'])}, "
+                    f"loo_min={format_float(pearson_r['leave_one_out_min'])}, "
+                    f"loo_max={format_float(pearson_r['leave_one_out_max'])}"
+                )
 
     path.write_text("\n".join(lines) + "\n", encoding="utf-8")
 
@@ -703,6 +1013,67 @@ def print_station_median_filter_summary(
     print(f"excluded_station_count={len(excluded_stations)}")
     print(f"surviving_station_count={surviving_station_count}")
     print(f"surviving_region_counts={surviving_region_counts}")
+
+
+def print_robustness_summary(robustness: Dict[str, object]) -> None:
+    scopes = robustness.get("scopes")
+    if not isinstance(scopes, dict):
+        raise RuntimeError("robustness.scopes is missing or malformed for console output.")
+
+    print("=== Three-bin leave-one-station-out robustness ===")
+    for scope_name in ("statewide",) + tuple(REGION_ORDER):
+        scope_result = scopes.get(scope_name)
+        if not isinstance(scope_result, dict):
+            raise RuntimeError(
+                f"robustness.scopes.{scope_name} is missing or malformed."
+            )
+        print(f"{scope_name} (runs={scope_result['leave_one_out_run_count']}):")
+        three_bin = scope_result.get("three_bin")
+        if not isinstance(three_bin, dict):
+            raise RuntimeError(
+                f"robustness.scopes.{scope_name}.three_bin is missing or malformed."
+            )
+        for bin_name in THREE_BIN_ORDER:
+            details = three_bin.get(bin_name)
+            if not isinstance(details, dict):
+                raise RuntimeError(
+                    f"robustness scope {scope_name} is missing bin {bin_name}."
+                )
+            print(
+                "  "
+                f"{bin_name:8s} all={format_float(details['all_stations_mean'])} "
+                f"loo=[{format_float(details['leave_one_out_min_mean'])}, "
+                f"{format_float(details['leave_one_out_max_mean'])}]"
+            )
+
+        gradient = scope_result.get("gradient_la_nina_minus_el_nino")
+        if not isinstance(gradient, dict):
+            raise RuntimeError(f"robustness scope {scope_name} gradient is missing.")
+        print(
+            "  "
+            "gradient(La Nina-El Nino) "
+            f"all={format_float(gradient['all_stations'])} "
+            f"loo=[{format_float(gradient['leave_one_out_min'])}, "
+            f"{format_float(gradient['leave_one_out_max'])}] "
+            f"sign_stability={gradient['sign_stability']}"
+        )
+
+        if scope_name == "statewide":
+            inferential_scope = scope_result.get("inferential")
+            if not isinstance(inferential_scope, dict):
+                raise RuntimeError("robustness statewide inferential block is missing.")
+            anova_p = inferential_scope["anova_p_value"]
+            pearson_r = inferential_scope["pearson_r"]
+            print(
+                "  "
+                "inferential "
+                f"anova_p=[{format_float(anova_p['leave_one_out_min'])}, "
+                f"{format_float(anova_p['leave_one_out_max'])}] "
+                f"below_{format_float(anova_p['below_threshold'])}="
+                f"{anova_p['below_threshold_count']} of {anova_p['below_threshold_of']} "
+                f"pearson_r=[{format_float(pearson_r['leave_one_out_min'])}, "
+                f"{format_float(pearson_r['leave_one_out_max'])}]"
+            )
 
 
 def main() -> None:
@@ -875,6 +1246,19 @@ def main() -> None:
         ),
     }
 
+    stats_payload["robustness"] = compute_three_bin_robustness(
+        station_percent_by_triplet=station_percent,
+        region_by_triplet=region_by_triplet,
+        station_name_by_triplet=station_name_by_triplet,
+        start_wy=COMMON_START_WY,
+        end_wy=resolved_end_wy,
+        three_bins_by_wy=three_bins_by_wy,
+        oni_by_wy=oni_oct_mar_by_wy,
+        statewide_three=statewide_three,
+        regional_results=regional_results,
+        statewide_inferential_three=stats_payload["inferential"]["three_bin"],
+    )
+
     print_gate_table(stats_payload)
     print_station_median_filter_summary(
         min_station_median_swe_in=MIN_STATION_MEDIAN_SWE_IN,
@@ -882,6 +1266,7 @@ def main() -> None:
         surviving_station_count=station_count,
         surviving_region_counts=region_counts,
     )
+    print_robustness_summary(stats_payload["robustness"])
     print(f"station_count={station_count}")
     print(f"region_counts={region_counts}")
     print(f"water_year_range=WY{COMMON_START_WY}-WY{resolved_end_wy}")
