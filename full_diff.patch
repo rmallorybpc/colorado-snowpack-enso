@@ -1,0 +1,2761 @@
+diff --git a/colorado_snowpack_enso.py b/colorado_snowpack_enso.py
+index 40c31d6..b35dc49 100644
+--- a/colorado_snowpack_enso.py
++++ b/colorado_snowpack_enso.py
+@@ -1,270 +1,833 @@
+-"""
+-Colorado snowpack vs ENSO: does La Nina actually matter?
+-
+-Pipeline:
+-  1. Pull ONI (Oceanic Nino Index) from NOAA CPC and classify each
+-     winter since water year 1981 by DJF ONI strength.
+-  2. GO/NO-GO GATE: print the season count per ONI bin. If the strong
+-     bins have < 4 seasons, that thinness is part of the finding.
+-  3. Pull daily snow water equivalent (SWE) from three long-record
+-     NRCS SNOTEL stations spanning Colorado's north-south gradient.
+-  4. Composite the seasonal SWE accumulation curves by ONI category
+-     and plot spaghetti (individual seasons) + category medians.
+-  5. Print April 1 SWE stats per bin per station for the post copy.
+-
+-Run locally:  pip install requests pandas matplotlib
+-              python colorado_snowpack_enso.py
+-Outputs:      snowpack_enso_composite.png, snowpack_enso_stats.txt
+-
+-Data sources (all free, public, federal):
+-  ONI:    https://www.cpc.ncep.noaa.gov/data/indices/oni.ascii.txt
+-  SNOTEL: NRCS AWDB REST API (wcc.sc.egov.usda.gov/awdbRestApi)
++"""Colorado snowpack ENSO analysis with strict single-run provenance.
++
++This script computes every output statistic directly from source data fetched
++during the same run and writes:
++  - stats.json
++  - snowpack_enso_stats.txt
++  - snowpack_enso_composite.png
+ """
+ 
+-import sys
+-import requests
+-import pandas as pd
++from __future__ import annotations
++
++import json
++import math
++import statistics
++from collections import Counter
++from datetime import date, datetime, timezone
++from pathlib import Path
++from typing import Dict, Iterable, List, Tuple
++
+ import matplotlib.pyplot as plt
+-from datetime import date
++import requests
++from scipy.stats import f_oneway, pearsonr
++
+ 
+ # ----------------------------------------------------------------------
+-# Config
++# CONFIG
+ # ----------------------------------------------------------------------
+ 
+-FIRST_WATER_YEAR = 1981          # SNOTEL records get thin before ~1980
+-LAST_WATER_YEAR = 2026           # WY2026 = Oct 2025 - Sep 2026
+-
+-# Long-record SNOTEL stations across the north-south gradient.
+-# Triplet format is "<station id>:CO:SNTL".
+-# VERIFY THESE before trusting output: the script checks each triplet
+-# against the AWDB metadata endpoint and will tell you if one is wrong.
+-STATIONS = {
+-    "825:CO:SNTL": "Tower (Park Range, north / Steamboat)",
+-    "335:CO:SNTL": "Berthoud Summit (central Front Range)",
+-    "874:CO:SNTL": "Wolf Creek Summit (San Juans, south)",
++COMMON_START_WY = 1981
++END_WY_RULE = "latest water year with at least one April 1 SWE observation"
++MIN_SEASONS_FOR_TEST = 8
++
++ONI_THRESHOLDS = {
++    "five_bin": {
++        "strong_la_nina_max": -1.5,
++        "weak_moderate_la_nina_max": -0.5,
++        "neutral_min_inclusive": -0.5,
++        "neutral_max_exclusive": 0.5,
++        "weak_moderate_el_nino_min_inclusive": 0.5,
++        "strong_el_nino_min": 1.5,
++    },
++    "three_bin": {
++        "la_nina_max": -0.5,
++        "neutral_min_inclusive": -0.5,
++        "neutral_max_exclusive": 0.5,
++        "el_nino_min_inclusive": 0.5,
++    },
+ }
+ 
+-ONI_URL = "https://www.cpc.ncep.noaa.gov/data/indices/oni.ascii.txt"
+-AWDB_BASE = "https://wcc.sc.egov.usda.gov/awdbRestApi/services/v1"
+-
+-# ONI bins. DJF ONI value -> label. Standard CPC-style thresholds.
+-def oni_bin(v):
+-    if v <= -1.5:
+-        return "Strong La Nina"
+-    if v <= -0.5:
+-        return "Weak/Moderate La Nina"
+-    if v < 0.5:
+-        return "Neutral"
+-    if v < 1.5:
+-        return "Weak/Moderate El Nino"
+-    return "Strong El Nino"
++ONI_REQUIRED_SEASONS_FOR_OCT_MAR = [
++    ("SON", -1),
++    ("OND", -1),
++    ("NDJ", -1),
++    ("DJF", 0),
++    ("JFM", 0),
++    ("FMA", 0),
++]
+ 
+-BIN_ORDER = [
++FIVE_BIN_ORDER = [
+     "Strong La Nina",
+     "Weak/Moderate La Nina",
+     "Neutral",
+     "Weak/Moderate El Nino",
+     "Strong El Nino",
+ ]
++THREE_BIN_ORDER = ["La Nina", "Neutral", "El Nino"]
++REGION_ORDER = ["north", "central", "south"]
++
++ONI_SOURCE_URL = "https://www.cpc.ncep.noaa.gov/data/indices/oni.ascii.txt"
++AWDB_ENDPOINT = "https://wcc.sc.egov.usda.gov/awdbRestApi/services/v1"
++STATIONS_FILE = Path("stations_candidate.json")
++
++AWDB_DATA_TIMEOUT_SECONDS = 180
++ONI_TIMEOUT_SECONDS = 30
++APRIL_MONTH = 4
++APRIL_DAY = 1
++WATER_YEAR_START_MONTH = 10
++DATE_SLICE_END = 10
++PLOT_DPI = 200
++FIG_WIDTH = 16
++FIG_HEIGHT = 10
++
++
++def parse_iso_date_prefix(raw_value: str) -> date:
++    text = str(raw_value)
++    if len(text) < DATE_SLICE_END:
++        raise RuntimeError(f"Invalid date value from API: {raw_value}")
++    return datetime.strptime(text[:DATE_SLICE_END], "%Y-%m-%d").date()
++
++
++def load_station_candidates(path: Path) -> Tuple[List[Dict[str, object]], str]:
++    if not path.exists():
++        raise RuntimeError(
++            "stations_candidate.json is missing. Run discover_stations.py first."
++        )
++    with path.open("r", encoding="utf-8") as handle:
++        payload = json.load(handle)
++    if not isinstance(payload, dict):
++        raise RuntimeError("stations_candidate.json must be a JSON object.")
++
++    stations = payload.get("stations")
++    if not isinstance(stations, list) or not stations:
++        raise RuntimeError("stations_candidate.json has no stations list to analyze.")
++
++    provenance = payload.get("provenance")
++    if not isinstance(provenance, dict):
++        raise RuntimeError("stations_candidate.json is missing a provenance object.")
++    stations_run_utc = provenance.get("run_utc")
++    if not isinstance(stations_run_utc, str) or not stations_run_utc:
++        raise RuntimeError(
++            "stations_candidate.json provenance.run_utc is missing or invalid."
++        )
++
++    for station in stations:
++        if not isinstance(station, dict):
++            raise RuntimeError("Each station entry must be a JSON object.")
++        for key in ("triplet", "name", "region"):
++            if key not in station:
++                raise RuntimeError(f"Station entry is missing required key: {key}")
++        region = str(station["region"])
++        if region not in REGION_ORDER:
++            raise RuntimeError(
++                f"Station {station['triplet']} has unknown region tag '{region}'."
++            )
++
++    return stations, stations_run_utc
++
++
++def fetch_oni_table(session: requests.Session) -> Dict[Tuple[str, int], float]:
++    response = session.get(ONI_SOURCE_URL, timeout=ONI_TIMEOUT_SECONDS)
++    response.raise_for_status()
++    rows: Dict[Tuple[str, int], float] = {}
++
++    for line in response.text.splitlines():
++        parts = line.split()
++        if len(parts) != 4:
++            continue
++        season, year_text, _, anom_text = parts
++        try:
++            year_value = int(year_text)
++            anomaly_value = float(anom_text)
++        except ValueError:
++            continue
++        rows[(season, year_value)] = anomaly_value
++
++    if not rows:
++        raise RuntimeError("ONI parse failed: no seasonal anomalies were found.")
++    return rows
++
++
++def compute_oni_oct_mar_by_wy(
++    oni_table: Dict[Tuple[str, int], float],
++    start_wy: int,
++    end_wy: int,
++) -> Dict[int, float]:
++    out: Dict[int, float] = {}
++    for wy in range(start_wy, end_wy + 1):
++        components: List[float] = []
++        for season, year_offset in ONI_REQUIRED_SEASONS_FOR_OCT_MAR:
++            key = (season, wy + year_offset)
++            if key not in oni_table:
++                raise RuntimeError(
++                    f"Missing ONI row for {season} {wy + year_offset}; cannot classify WY{wy}."
++                )
++            components.append(oni_table[key])
++        out[wy] = statistics.fmean(components)
++    return out
+ 
+-# Coarse 3-way grouping for the chart (5 medians per panel is clutter).
+-def oni_group(v):
+-    if v <= -0.5:
+-        return "La Nina"
+-    if v < 0.5:
++
++def classify_five_bin(oni_value: float) -> str:
++    th = ONI_THRESHOLDS["five_bin"]
++    if oni_value <= th["strong_la_nina_max"]:
++        return "Strong La Nina"
++    if oni_value <= th["weak_moderate_la_nina_max"]:
++        return "Weak/Moderate La Nina"
++    if oni_value < th["neutral_max_exclusive"]:
+         return "Neutral"
+-    return "El Nino"
++    if oni_value < th["strong_el_nino_min"]:
++        return "Weak/Moderate El Nino"
++    return "Strong El Nino"
+ 
+-GROUP_COLORS = {"La Nina": "#1f77b4", "Neutral": "#7f7f7f", "El Nino": "#d62728"}
+ 
++def classify_three_bin(oni_value: float) -> str:
++    th = ONI_THRESHOLDS["three_bin"]
++    if oni_value <= th["la_nina_max"]:
++        return "La Nina"
++    if oni_value < th["neutral_max_exclusive"]:
++        return "Neutral"
++    return "El Nino"
+ 
+-# ----------------------------------------------------------------------
+-# Step 1: ONI
+-# ----------------------------------------------------------------------
+ 
+-def fetch_oni():
+-    """Return {water_year: djf_oni_anomaly}.
+-
+-    In CPC's oni.ascii.txt, the row 'DJF 1999' means Dec 1998 - Feb 1999,
+-    which sits inside water year 1999 (Oct 1998 - Sep 1999). So the DJF
+-    year label and the water year label already match.
+-    """
+-    print("Fetching ONI from CPC ...")
+-    r = requests.get(ONI_URL, timeout=30)
+-    r.raise_for_status()
+-    out = {}
+-    for line in r.text.splitlines():
+-        parts = line.split()
+-        if len(parts) == 4 and parts[0] == "DJF":
+-            try:
+-                yr, anom = int(parts[1]), float(parts[3])
+-            except ValueError:
++def fetch_station_april1_series(
++    session: requests.Session,
++    station_triplet: str,
++    start_wy: int,
++) -> Dict[int, float]:
++    begin_date = date(start_wy - 1, WATER_YEAR_START_MONTH, 1).isoformat()
++    end_date = date.today().isoformat()
++    params = {
++        "stationTriplets": station_triplet,
++        "elements": "WTEQ",
++        "duration": "DAILY",
++        "beginDate": begin_date,
++        "endDate": end_date,
++    }
++    response = session.get(
++        AWDB_ENDPOINT + "/data", params=params, timeout=AWDB_DATA_TIMEOUT_SECONDS
++    )
++    response.raise_for_status()
++    payload = response.json()
++
++    if not isinstance(payload, list):
++        raise RuntimeError(
++            f"AWDB data payload for {station_triplet} was not a list as expected."
++        )
++    if len(payload) != 1:
++        raise RuntimeError(
++            f"AWDB returned {len(payload)} station blocks for {station_triplet}; expected 1."
++        )
++
++    station_block = payload[0]
++    station_key = station_block.get("stationTriplet")
++    if station_key and station_key != station_triplet:
++        raise RuntimeError(
++            f"AWDB returned station {station_key} while querying {station_triplet}."
++        )
++
++    data_blocks = station_block.get("data")
++    if not isinstance(data_blocks, list) or not data_blocks:
++        raise RuntimeError(f"AWDB returned no data blocks for {station_triplet}.")
++
++    series: Dict[int, float] = {}
++    point_count = 0
++    for data_block in data_blocks:
++        values = data_block.get("values")
++        if not isinstance(values, list):
++            raise RuntimeError(
++                f"AWDB values block for {station_triplet} is malformed or missing."
++            )
++        point_count += len(values)
++        for point in values:
++            if not isinstance(point, dict):
++                raise RuntimeError(
++                    f"AWDB value item for {station_triplet} is malformed: {point}"
++                )
++            raw_date = point.get("date")
++            raw_value = point.get("value")
++            if raw_date is None or raw_value is None:
++                continue
++            obs_date = parse_iso_date_prefix(str(raw_date))
++            if obs_date.month != APRIL_MONTH or obs_date.day != APRIL_DAY:
+                 continue
+-            out[yr] = anom
+-    if not out:
+-        sys.exit("ONI parse failed. Check the file format at " + ONI_URL)
++            if obs_date.year in series:
++                raise RuntimeError(
++                    f"Duplicate April 1 SWE observations for {station_triplet} WY{obs_date.year}."
++                )
++            series[obs_date.year] = float(raw_value)
++
++    if point_count == 0:
++        raise RuntimeError(f"AWDB returned zero daily records for {station_triplet}.")
++    if not series:
++        raise RuntimeError(
++            f"No non-null April 1 SWE observations found for {station_triplet}."
++        )
++    return series
++
++
++def compute_percent_of_station_median(
++    station_series_by_triplet: Dict[str, Dict[int, float]],
++    start_wy: int,
++    end_wy: int,
++) -> Tuple[Dict[str, Dict[int, float]], Dict[str, float]]:
++    station_percent: Dict[str, Dict[int, float]] = {}
++    station_medians: Dict[str, float] = {}
++
++    for triplet, wy_series in station_series_by_triplet.items():
++        trimmed = {wy: value for wy, value in wy_series.items() if start_wy <= wy <= end_wy}
++        if not trimmed:
++            raise RuntimeError(
++                f"Station {triplet} has no April 1 SWE values within WY{start_wy}-WY{end_wy}."
++            )
++        median_value = statistics.median(trimmed.values())
++        if median_value == 0:
++            raise RuntimeError(
++                f"Station {triplet} median April 1 SWE is zero, cannot compute percent-of-median."
++            )
++        station_medians[triplet] = median_value
++        station_percent[triplet] = {
++            wy: (value / median_value) * 100.0 for wy, value in trimmed.items()
++        }
++
++    return station_percent, station_medians
++
++
++def compute_seasonal_indices(
++    station_percent_by_triplet: Dict[str, Dict[int, float]],
++    region_by_triplet: Dict[str, str],
++    start_wy: int,
++    end_wy: int,
++) -> Tuple[
++    Dict[int, float],
++    Dict[int, int],
++    Dict[str, Dict[int, float]],
++    Dict[str, Dict[int, int]],
++]:
++    statewide_index: Dict[int, float] = {}
++    statewide_counts: Dict[int, int] = {}
++    regional_index: Dict[str, Dict[int, float]] = {region: {} for region in REGION_ORDER}
++    regional_counts: Dict[str, Dict[int, int]] = {region: {} for region in REGION_ORDER}
++
++    for wy in range(start_wy, end_wy + 1):
++        statewide_values = [
++            station_values[wy]
++            for station_values in station_percent_by_triplet.values()
++            if wy in station_values
++        ]
++        if not statewide_values:
++            raise RuntimeError(
++                f"No station values available to compute statewide index for WY{wy}."
++            )
++        statewide_index[wy] = statistics.fmean(statewide_values)
++        statewide_counts[wy] = len(statewide_values)
++
++        for region in REGION_ORDER:
++            region_values = [
++                station_percent_by_triplet[triplet][wy]
++                for triplet, triplet_region in region_by_triplet.items()
++                if triplet_region == region and wy in station_percent_by_triplet[triplet]
++            ]
++            if not region_values:
++                raise RuntimeError(
++                    f"No station values available to compute {region} index for WY{wy}."
++                )
++            regional_index[region][wy] = statistics.fmean(region_values)
++            regional_counts[region][wy] = len(region_values)
++
++    return statewide_index, statewide_counts, regional_index, regional_counts
++
++
++def compute_bin_results(
++    series_by_wy: Dict[int, float],
++    bins_by_wy: Dict[int, str],
++    bin_order: Iterable[str],
++    label: str,
++) -> Dict[str, Dict[str, object]]:
++    out: Dict[str, Dict[str, object]] = {}
++    for bin_name in bin_order:
++        years = sorted([wy for wy, current_bin in bins_by_wy.items() if current_bin == bin_name])
++        if not years:
++            raise RuntimeError(
++                f"{label}: bin '{bin_name}' has zero seasons; cannot compute required statistics."
++            )
++        values = [series_by_wy[wy] for wy in years]
++        out[bin_name] = {
++            "n_seasons": len(values),
++            "mean": statistics.fmean(values),
++            "median": statistics.median(values),
++            "min": min(values),
++            "max": max(values),
++            "stddev": statistics.pstdev(values),
++            "water_years": years,
++            "values": values,
++        }
+     return out
+ 
+ 
+-def print_gate(oni_by_wy):
+-    """The go/no-go count: seasons per ONI bin in the study window."""
+-    wys = {wy: v for wy, v in oni_by_wy.items()
+-           if FIRST_WATER_YEAR <= wy <= LAST_WATER_YEAR}
+-    counts = {b: [] for b in BIN_ORDER}
+-    for wy, v in sorted(wys.items()):
+-        counts[oni_bin(v)].append(wy)
+-    print("\n=== GO/NO-GO GATE: seasons per ONI bin, WY%d-WY%d ==="
+-          % (FIRST_WATER_YEAR, LAST_WATER_YEAR))
+-    for b in BIN_ORDER:
+-        yrs = counts[b]
+-        flag = "  <-- THIN (n < 4): report this in the post" if len(yrs) < 4 else ""
+-        print("  %-24s n=%2d  %s%s" % (b, len(yrs), yrs, flag))
+-    print("If a strong bin is thin, the thinness is part of the finding.\n")
+-    return wys
+-
++def build_gate(bin_results: Dict[str, Dict[str, object]], bin_order: Iterable[str]) -> Dict[str, object]:
++    season_counts = {
++        bin_name: int(bin_results[bin_name]["n_seasons"]) for bin_name in bin_order
++    }
++    failing_bins = [
++        bin_name for bin_name, count in season_counts.items() if count < MIN_SEASONS_FOR_TEST
++    ]
++    return {
++        "season_counts": season_counts,
++        "all_bins_meet_min_seasons": len(failing_bins) == 0,
++        "failing_bins": failing_bins,
++    }
+ 
+-# ----------------------------------------------------------------------
+-# Step 2: SNOTEL
+-# ----------------------------------------------------------------------
+ 
+-def verify_stations():
+-    """Confirm each station triplet resolves in AWDB metadata."""
+-    print("Verifying SNOTEL station triplets ...")
+-    triplets = ",".join(STATIONS)
+-    r = requests.get(AWDB_BASE + "/stations",
+-                     params={"stationTriplets": triplets}, timeout=30)
+-    r.raise_for_status()
+-    found = {s.get("stationTriplet"): s.get("name") for s in r.json()}
+-    for t, label in STATIONS.items():
+-        if t in found:
+-            print("  OK  %s -> AWDB name: %s" % (t, found[t]))
+-        else:
+-            print("  MISSING %s (%s). Look up the correct id at the NRCS"
+-                  " interactive map, then fix STATIONS above." % (t, label))
+-    missing = [t for t in STATIONS if t not in found]
+-    if missing:
+-        sys.exit("Fix station triplets before continuing: %s" % missing)
++def compute_inferential(
++    scheme_name: str,
++    gate: Dict[str, object],
++    bin_results: Dict[str, Dict[str, object]],
++    bin_order: Iterable[str],
++    oni_by_wy: Dict[int, float],
++    statewide_index_by_wy: Dict[int, float],
++) -> Dict[str, object]:
++    failure_message = "not computed: season count below MIN_SEASONS_FOR_TEST"
++    if not gate["all_bins_meet_min_seasons"]:
++        return {
++            "scheme": scheme_name,
++            "anova": failure_message,
++            "pearson": failure_message,
++            "failing_bins": list(gate["failing_bins"]),
++        }
++
++    groups = [list(bin_results[bin_name]["values"]) for bin_name in bin_order]
++    anova_result = f_oneway(*groups)
++
++    years = sorted(statewide_index_by_wy)
++    oni_values = [oni_by_wy[wy] for wy in years]
++    index_values = [statewide_index_by_wy[wy] for wy in years]
++    correlation = pearsonr(oni_values, index_values)
++
++    return {
++        "scheme": scheme_name,
++        "anova": {
++            "f_statistic": float(anova_result.statistic),
++            "p_value": float(anova_result.pvalue),
++        },
++        "pearson": {
++            "r": float(correlation.statistic),
++            "p_value": float(correlation.pvalue),
++        },
++        "failing_bins": [],
++    }
+ 
+ 
+-def fetch_swe(triplet):
+-    """Daily SWE (element WTEQ, inches) for one station, full record."""
+-    params = {
+-        "stationTriplets": triplet,
+-        "elements": "WTEQ",
+-        "duration": "DAILY",
+-        "beginDate": "%d-10-01" % (FIRST_WATER_YEAR - 1),
+-        "endDate": "%d-06-30" % LAST_WATER_YEAR,
++def to_wy_keyed_object(values: Dict[int, object]) -> Dict[str, object]:
++    return {f"WY{wy}": values[wy] for wy in sorted(values)}
++
++
++def non_constant_count_warning_message(counts_by_wy: Dict[int, int], label: str) -> str | None:
++    unique_counts = sorted(set(counts_by_wy.values()))
++    if len(unique_counts) <= 1:
++        return None
++    mode_count = Counter(counts_by_wy.values()).most_common(1)[0][0]
++    affected = [wy for wy, count in sorted(counts_by_wy.items()) if count != mode_count]
++    affected_text = ", ".join([f"WY{wy}" for wy in affected])
++    return (
++        f"WARNING: {label} contributor counts are not constant. "
++        f"Most common count={mode_count}; affected years: {affected_text}"
++    )
++
++
++def format_float(value: float) -> str:
++    if math.isnan(value):
++        raise RuntimeError("Encountered NaN in computed statistics; refusing to write output.")
++    return f"{value:.4f}"
++
++
++def write_text_report(stats_payload: Dict[str, object], path: Path) -> None:
++    lines: List[str] = []
++
++    provenance = stats_payload["provenance"]
++    gate = stats_payload["gate"]
++    statewide = stats_payload["statewide"]
++    regional = stats_payload["regional"]
++    inferential = stats_payload["inferential"]
++
++    lines.append("Colorado snowpack ENSO analysis (single-run computed output)")
++    lines.append("")
++    lines.append("Provenance")
++    lines.append(f"  run_utc: {provenance['run_utc']}")
++    lines.append(f"  oni_source_url: {provenance['oni_source_url']}")
++    lines.append(f"  awdb_endpoint: {provenance['awdb_endpoint']}")
++    lines.append(f"  stations_file_path: {provenance['stations_file_path']}")
++    lines.append(f"  stations_file_run_utc: {provenance['stations_file_run_utc']}")
++    lines.append(f"  station_count: {provenance['station_count']}")
++    lines.append(f"  region_counts: {provenance['region_counts']}")
++    lines.append(f"  common_start_wy: {provenance['common_start_wy']}")
++    lines.append(f"  end_wy_rule: {provenance['end_wy_rule']}")
++    lines.append(f"  resolved_end_wy: {provenance['resolved_end_wy']}")
++    lines.append(f"  season_count: {provenance['season_count']}")
++    lines.append(f"  oni_thresholds: {provenance['oni_thresholds']}")
++    lines.append(f"  min_seasons_for_test: {provenance['min_seasons_for_test']}")
++    lines.append("")
++
++    lines.append("Gate")
++    for scheme_name in ("five_bin", "three_bin"):
++        scheme_gate = gate[scheme_name]
++        lines.append(f"  {scheme_name} season_counts: {scheme_gate['season_counts']}")
++        lines.append(
++            "  "
++            f"{scheme_name} all_bins_meet_min_seasons: "
++            f"{scheme_gate['all_bins_meet_min_seasons']}"
++        )
++        lines.append(f"  {scheme_name} failing_bins: {scheme_gate['failing_bins']}")
++    lines.append("")
++
++    lines.append("Statewide results")
++    for scheme_name in ("five_bin", "three_bin"):
++        lines.append(f"  {scheme_name}")
++        for bin_name, details in statewide[scheme_name].items():
++            lines.append(
++                "    "
++                f"{bin_name}: n={details['n_seasons']}, "
++                f"mean={format_float(details['mean'])}, "
++                f"median={format_float(details['median'])}, "
++                f"min={format_float(details['min'])}, "
++                f"max={format_float(details['max'])}, "
++                f"stddev={format_float(details['stddev'])}, "
++                f"water_years={details['water_years']}"
++            )
++    lines.append("")
++
++    lines.append("Regional results")
++    for region_name in REGION_ORDER:
++        lines.append(f"  {region_name}")
++        lines.append(
++            "    "
++            f"station_count_by_water_year: "
++            f"{regional[region_name]['station_count_by_water_year']}"
++        )
++        for scheme_name in ("five_bin", "three_bin"):
++            lines.append(f"    {scheme_name}")
++            for bin_name, details in regional[region_name][scheme_name].items():
++                lines.append(
++                    "      "
++                    f"{bin_name}: n={details['n_seasons']}, "
++                    f"mean={format_float(details['mean'])}, "
++                    f"median={format_float(details['median'])}, "
++                    f"min={format_float(details['min'])}, "
++                    f"max={format_float(details['max'])}, "
++                    f"stddev={format_float(details['stddev'])}, "
++                    f"water_years={details['water_years']}"
++                )
++    lines.append("")
++
++    lines.append("Inferential (gated by scheme)")
++    for scheme_name in ("five_bin", "three_bin"):
++        result = inferential[scheme_name]
++        lines.append(f"  {scheme_name}")
++        if isinstance(result["anova"], str):
++            lines.append(f"    anova: {result['anova']}")
++            lines.append(f"    pearson: {result['pearson']}")
++            lines.append(f"    failing_bins: {result['failing_bins']}")
++        else:
++            lines.append(
++                "    "
++                f"anova: F={format_float(result['anova']['f_statistic'])}, "
++                f"p={format_float(result['anova']['p_value'])}"
++            )
++            lines.append(
++                "    "
++                f"pearson: r={format_float(result['pearson']['r'])}, "
++                f"p={format_float(result['pearson']['p_value'])}"
++            )
++
++    path.write_text("\n".join(lines) + "\n", encoding="utf-8")
++
++
++def plot_results(stats_payload: Dict[str, object], output_path: Path) -> None:
++    statewide = stats_payload["statewide"]
++    regional = stats_payload["regional"]
++    inferential = stats_payload["inferential"]
++
++    fig, axes = plt.subplots(2, 2, figsize=(FIG_WIDTH, FIG_HEIGHT))
++    ax_five = axes[0][0]
++    ax_three = axes[0][1]
++    ax_reg_five = axes[1][0]
++    ax_reg_three = axes[1][1]
++
++    five_data = [statewide["five_bin"][bin_name]["values"] for bin_name in FIVE_BIN_ORDER]
++    three_data = [statewide["three_bin"][bin_name]["values"] for bin_name in THREE_BIN_ORDER]
++
++    ax_five.boxplot(five_data, tick_labels=FIVE_BIN_ORDER)
++    ax_five.set_title("Statewide index by five-bin ONI scheme")
++    ax_five.set_ylabel("Seasonal index (% of station median)")
++    ax_five.tick_params(axis="x", rotation=20)
++    for idx, bin_name in enumerate(FIVE_BIN_ORDER, start=1):
++        n_value = statewide["five_bin"][bin_name]["n_seasons"]
++        max_value = statewide["five_bin"][bin_name]["max"]
++        ax_five.text(idx, max_value, f"n={n_value}", ha="center", va="bottom", fontsize=8)
++    if isinstance(inferential["five_bin"]["anova"], str):
++        ax_five.text(
++            0.02,
++            0.95,
++            f"ANOVA {inferential['five_bin']['anova']}\nFailing bins: {inferential['five_bin']['failing_bins']}",
++            transform=ax_five.transAxes,
++            va="top",
++            fontsize=8,
++        )
++
++    ax_three.boxplot(three_data, tick_labels=THREE_BIN_ORDER)
++    ax_three.set_title("Statewide index by three-bin ONI scheme")
++    ax_three.tick_params(axis="x", rotation=20)
++    for idx, bin_name in enumerate(THREE_BIN_ORDER, start=1):
++        n_value = statewide["three_bin"][bin_name]["n_seasons"]
++        max_value = statewide["three_bin"][bin_name]["max"]
++        ax_three.text(idx, max_value, f"n={n_value}", ha="center", va="bottom", fontsize=8)
++    if isinstance(inferential["three_bin"]["anova"], str):
++        ax_three.text(
++            0.02,
++            0.95,
++            f"ANOVA {inferential['three_bin']['anova']}\nFailing bins: {inferential['three_bin']['failing_bins']}",
++            transform=ax_three.transAxes,
++            va="top",
++            fontsize=8,
++        )
++    else:
++        ax_three.text(
++            0.02,
++            0.95,
++            "\n".join(
++                [
++                    "ANOVA "
++                    f"F={format_float(inferential['three_bin']['anova']['f_statistic'])}, "
++                    f"p={format_float(inferential['three_bin']['anova']['p_value'])}",
++                    "Pearson "
++                    f"r={format_float(inferential['three_bin']['pearson']['r'])}, "
++                    f"p={format_float(inferential['three_bin']['pearson']['p_value'])}",
++                ]
++            ),
++            transform=ax_three.transAxes,
++            va="top",
++            fontsize=8,
++        )
++
++    x_positions_five = list(range(1, len(FIVE_BIN_ORDER) + 1))
++    for region in REGION_ORDER:
++        means = [regional[region]["five_bin"][bin_name]["mean"] for bin_name in FIVE_BIN_ORDER]
++        ax_reg_five.plot(x_positions_five, means, marker="o", label=region)
++    ax_reg_five.set_xticks(x_positions_five)
++    ax_reg_five.set_xticklabels(FIVE_BIN_ORDER, rotation=20)
++    ax_reg_five.set_title("Regional seasonal index means (five-bin)")
++    ax_reg_five.set_ylabel("Mean seasonal index (% of station median)")
++    ax_reg_five.legend()
++
++    x_positions_three = list(range(1, len(THREE_BIN_ORDER) + 1))
++    for region in REGION_ORDER:
++        means = [regional[region]["three_bin"][bin_name]["mean"] for bin_name in THREE_BIN_ORDER]
++        ax_reg_three.plot(x_positions_three, means, marker="o", label=region)
++    ax_reg_three.set_xticks(x_positions_three)
++    ax_reg_three.set_xticklabels(THREE_BIN_ORDER, rotation=20)
++    ax_reg_three.set_title("Regional seasonal index means (three-bin)")
++    ax_reg_three.legend()
++
++    fig.suptitle("Colorado April 1 SWE seasonal index vs ENSO")
++    fig.tight_layout()
++    fig.savefig(output_path, dpi=PLOT_DPI)
++    plt.close(fig)
++
++
++def print_gate_table(stats_payload: Dict[str, object]) -> None:
++    gate = stats_payload["gate"]
++    print("=== N-count gate (printed first by design) ===")
++    for scheme_name in ("five_bin", "three_bin"):
++        scheme_gate = gate[scheme_name]
++        print(f"{scheme_name}:")
++        for bin_name, count in scheme_gate["season_counts"].items():
++            print(f"  {bin_name:24s} n={count:2d}")
++        print(f"  all_bins_meet_min_seasons={scheme_gate['all_bins_meet_min_seasons']}")
++        print(f"  failing_bins={scheme_gate['failing_bins']}")
++
++
++def main() -> None:
++    stations, stations_run_utc = load_station_candidates(STATIONS_FILE)
++    region_by_triplet = {
++        str(station["triplet"]): str(station["region"]) for station in stations
+     }
+-    r = requests.get(AWDB_BASE + "/data", params=params, timeout=120)
+-    r.raise_for_status()
+-    payload = r.json()
+-    rows = []
+-    # Expected shape: [{stationTriplet, data: [{stationElement, values:
+-    # [{date, value}, ...]}]}]. Written defensively; if AWDB changes its
+-    # response shape, print the payload and adjust here.
+-    try:
+-        for station in payload:
+-            for elem in station.get("data", []):
+-                for v in elem.get("values", []):
+-                    if v.get("value") is not None:
+-                        rows.append((v["date"], float(v["value"])))
+-    except (TypeError, KeyError) as e:
+-        print("Unexpected AWDB response shape (%s). First 500 chars:" % e)
+-        print(str(payload)[:500])
+-        sys.exit(1)
+-    df = pd.DataFrame(rows, columns=["date", "swe"])
+-    df["date"] = pd.to_datetime(df["date"])
+-    return df
+-
+-
+-def add_water_year(df):
+-    df = df.copy()
+-    m = df["date"].dt.month
+-    df["wy"] = df["date"].dt.year + (m >= 10).astype(int)
+-    # Day of water year: Oct 1 = day 1.
+-    start = pd.to_datetime((df["wy"] - 1).astype(str) + "-10-01")
+-    df["dowy"] = (df["date"] - start).dt.days + 1
+-    # Keep Oct 1 - Jun 30 accumulation season.
+-    df = df[(df["dowy"] >= 1) & (df["dowy"] <= 273)]
+-    return df
+-
+ 
+-# ----------------------------------------------------------------------
+-# Step 3: composite + chart + stats
+-# ----------------------------------------------------------------------
++    session = requests.Session()
++    oni_table = fetch_oni_table(session)
++
++    station_series_by_triplet: Dict[str, Dict[int, float]] = {}
++    for station in stations:
++        triplet = str(station["triplet"])
++        station_series_by_triplet[triplet] = fetch_station_april1_series(
++            session=session,
++            station_triplet=triplet,
++            start_wy=COMMON_START_WY,
++        )
++
++    observed_wys = [
++        wy
++        for station_series in station_series_by_triplet.values()
++        for wy in station_series
++        if wy >= COMMON_START_WY
++    ]
++    if not observed_wys:
++        raise RuntimeError(
++            f"No April 1 SWE observations found at or after WY{COMMON_START_WY}."
++        )
++    resolved_end_wy = max(observed_wys)
++    oni_oct_mar_by_wy = compute_oni_oct_mar_by_wy(
++        oni_table=oni_table,
++        start_wy=COMMON_START_WY,
++        end_wy=resolved_end_wy,
++    )
++
++    station_percent, station_medians = compute_percent_of_station_median(
++        station_series_by_triplet=station_series_by_triplet,
++        start_wy=COMMON_START_WY,
++        end_wy=resolved_end_wy,
++    )
++    (
++        statewide_index_by_wy,
++        statewide_counts_by_wy,
++        regional_index_by_wy,
++        regional_counts_by_wy,
++    ) = compute_seasonal_indices(
++        station_percent_by_triplet=station_percent,
++        region_by_triplet=region_by_triplet,
++        start_wy=COMMON_START_WY,
++        end_wy=resolved_end_wy,
++    )
++
++    five_bins_by_wy = {wy: classify_five_bin(oni) for wy, oni in oni_oct_mar_by_wy.items()}
++    three_bins_by_wy = {wy: classify_three_bin(oni) for wy, oni in oni_oct_mar_by_wy.items()}
++
++    statewide_five = compute_bin_results(
++        series_by_wy=statewide_index_by_wy,
++        bins_by_wy=five_bins_by_wy,
++        bin_order=FIVE_BIN_ORDER,
++        label="statewide five-bin",
++    )
++    statewide_three = compute_bin_results(
++        series_by_wy=statewide_index_by_wy,
++        bins_by_wy=three_bins_by_wy,
++        bin_order=THREE_BIN_ORDER,
++        label="statewide three-bin",
++    )
++
++    regional_results: Dict[str, Dict[str, object]] = {}
++    for region in REGION_ORDER:
++        regional_results[region] = {
++            "station_count_by_water_year": to_wy_keyed_object(regional_counts_by_wy[region]),
++            "five_bin": compute_bin_results(
++                series_by_wy=regional_index_by_wy[region],
++                bins_by_wy=five_bins_by_wy,
++                bin_order=FIVE_BIN_ORDER,
++                label=f"{region} five-bin",
++            ),
++            "three_bin": compute_bin_results(
++                series_by_wy=regional_index_by_wy[region],
++                bins_by_wy=three_bins_by_wy,
++                bin_order=THREE_BIN_ORDER,
++                label=f"{region} three-bin",
++            ),
++        }
++
++    gate_five = build_gate(statewide_five, FIVE_BIN_ORDER)
++    gate_three = build_gate(statewide_three, THREE_BIN_ORDER)
++
++    station_count = len(stations)
++    region_counts = {region: 0 for region in REGION_ORDER}
++    for station in stations:
++        region_counts[str(station["region"])] += 1
++
++    run_utc = datetime.now(timezone.utc).isoformat()
++    stats_payload: Dict[str, object] = {
++        "provenance": {
++            "run_utc": run_utc,
++            "oni_source_url": ONI_SOURCE_URL,
++            "awdb_endpoint": AWDB_ENDPOINT,
++            "stations_file_path": str(STATIONS_FILE.resolve()),
++            "stations_file_run_utc": stations_run_utc,
++            "station_count": station_count,
++            "region_counts": region_counts,
++            "common_start_wy": COMMON_START_WY,
++            "end_wy_rule": END_WY_RULE,
++            "resolved_end_wy": resolved_end_wy,
++            "season_count": resolved_end_wy - COMMON_START_WY + 1,
++            "oni_thresholds": ONI_THRESHOLDS,
++            "min_seasons_for_test": MIN_SEASONS_FOR_TEST,
++        },
++        "gate": {
++            "five_bin": gate_five,
++            "three_bin": gate_three,
++        },
++        "statewide": {
++            "five_bin": statewide_five,
++            "three_bin": statewide_three,
++            "station_count_by_water_year": to_wy_keyed_object(statewide_counts_by_wy),
++            "seasonal_index_by_water_year": to_wy_keyed_object(statewide_index_by_wy),
++            "oni_oct_mar_by_water_year": to_wy_keyed_object(oni_oct_mar_by_wy),
++        },
++        "regional": regional_results,
++        "station_medians_april1_swe": station_medians,
++    }
+ 
+-def april1_swe(df_wy):
+-    """SWE on/near April 1 (dowy 183) for one station-season frame."""
+-    near = df_wy[(df_wy["dowy"] >= 180) & (df_wy["dowy"] <= 186)]
+-    return near["swe"].max() if len(near) else None
+-
+-
+-def main():
+-    oni = fetch_oni()
+-    wys = print_gate(oni)
+-
+-    verify_stations()
+-
+-    fig, axes = plt.subplots(1, len(STATIONS), figsize=(15, 5),
+-                             sharey=False)
+-    if len(STATIONS) == 1:
+-        axes = [axes]
+-
+-    stats_lines = []
+-    for ax, (triplet, label) in zip(axes, STATIONS.items()):
+-        print("Fetching SWE for %s ..." % label)
+-        df = add_water_year(fetch_swe(triplet))
+-        df = df[df["wy"].isin(wys)]
+-
+-        a1 = {}  # bin -> list of April 1 SWE values
+-        for wy, season in df.groupby("wy"):
+-            v = wys[wy]
+-            grp = oni_group(v)
+-            season = season.sort_values("dowy")
+-            ax.plot(season["dowy"], season["swe"],
+-                    color=GROUP_COLORS[grp], alpha=0.18, lw=0.8)
+-            s = april1_swe(season)
+-            if s is not None:
+-                a1.setdefault(oni_bin(v), []).append((wy, s))
+-
+-        # Median curve per coarse group.
+-        df["grp"] = df["wy"].map(lambda w: oni_group(wys[w]))
+-        for grp, g in df.groupby("grp"):
+-            med = g.groupby("dowy")["swe"].median()
+-            ax.plot(med.index, med.values, color=GROUP_COLORS[grp],
+-                    lw=2.5, label="%s median" % grp)
+-
+-        ax.set_title(label, fontsize=10)
+-        ax.set_xlabel("Day of water year (Oct 1 = 1)")
+-        ax.set_ylabel("SWE (inches)")
+-        ax.legend(fontsize=8)
+-
+-        stats_lines.append("\n%s (%s)" % (label, triplet))
+-        stats_lines.append("  April 1 SWE by ONI bin "
+-                           "(median [min-max], n):")
+-        for b in BIN_ORDER:
+-            vals = sorted(v for _, v in a1.get(b, []))
+-            if not vals:
+-                stats_lines.append("    %-24s no seasons" % b)
+-                continue
+-            med = vals[len(vals) // 2]
+-            stats_lines.append(
+-                "    %-24s %5.1f in  [%5.1f - %5.1f]  n=%d"
+-                % (b, med, vals[0], vals[-1], len(vals)))
+-
+-    fig.suptitle("Colorado SNOTEL snow water equivalent by ENSO state, "
+-                 "WY%d-WY%d. Faint lines are individual seasons."
+-                 % (FIRST_WATER_YEAR, LAST_WATER_YEAR), fontsize=11)
+-    fig.tight_layout()
+-    fig.savefig("snowpack_enso_composite.png", dpi=200)
+-    print("\nWrote snowpack_enso_composite.png")
++    stats_payload["inferential"] = {
++        "five_bin": compute_inferential(
++            scheme_name="five_bin",
++            gate=gate_five,
++            bin_results=statewide_five,
++            bin_order=FIVE_BIN_ORDER,
++            oni_by_wy=oni_oct_mar_by_wy,
++            statewide_index_by_wy=statewide_index_by_wy,
++        ),
++        "three_bin": compute_inferential(
++            scheme_name="three_bin",
++            gate=gate_three,
++            bin_results=statewide_three,
++            bin_order=THREE_BIN_ORDER,
++            oni_by_wy=oni_oct_mar_by_wy,
++            statewide_index_by_wy=statewide_index_by_wy,
++        ),
++    }
+ 
+-    stats = "\n".join(stats_lines)
+-    with open("snowpack_enso_stats.txt", "w") as f:
+-        f.write(stats + "\n")
+-    print(stats)
+-    print("\nWrote snowpack_enso_stats.txt")
++    print_gate_table(stats_payload)
++    print(f"station_count={station_count}")
++    print(f"region_counts={region_counts}")
++    print(f"water_year_range=WY{COMMON_START_WY}-WY{resolved_end_wy}")
++    print(f"season_count={resolved_end_wy - COMMON_START_WY + 1}")
++
++    warning = non_constant_count_warning_message(statewide_counts_by_wy, "statewide")
++    if warning:
++        print(warning)
++    for region in REGION_ORDER:
++        regional_warning = non_constant_count_warning_message(
++            regional_counts_by_wy[region],
++            region,
++        )
++        if regional_warning:
++            print(regional_warning)
++
++    stats_json_path = Path("stats.json")
++    stats_text_path = Path("snowpack_enso_stats.txt")
++    chart_path = Path("snowpack_enso_composite.png")
++
++    with stats_json_path.open("w", encoding="utf-8") as handle:
++        json.dump(stats_payload, handle, indent=2)
++        handle.write("\n")
++    write_text_report(stats_payload, stats_text_path)
++    plot_results(stats_payload, chart_path)
++
++    print(f"wrote_file={stats_json_path.resolve()}")
++    print(f"wrote_file={stats_text_path.resolve()}")
++    print(f"wrote_file={chart_path.resolve()}")
+ 
+ 
+ if __name__ == "__main__":
+-    main()
++    try:
++        main()
++    except requests.HTTPError as exc:
++        raise SystemExit(f"HTTP request failed: {exc}") from exc
++    except requests.RequestException as exc:
++        raise SystemExit(f"Network request failed: {exc}") from exc
++    except Exception as exc:  # noqa: BLE001
++        raise SystemExit(str(exc)) from exc
+diff --git a/snowpack_enso_stats.txt b/snowpack_enso_stats.txt
+index f977c63..519e63d 100644
+--- a/snowpack_enso_stats.txt
++++ b/snowpack_enso_stats.txt
+@@ -1,33 +1,83 @@
+-Tower (Park Range, north / Steamboat) (825:CO:SNTL)
+-  April 1 SWE by ONI bin (median [min-max], n):
+-    Strong La Nina            46.4 in  [ 44.1 -  51.1]  n=4
+-    Weak/Moderate La Nina     46.8 in  [ 27.1 -  58.0]  n=13
+-    Neutral                   41.8 in  [ 24.7 -  63.6]  n=14
+-    Weak/Moderate El Nino     44.0 in  [ 29.2 -  51.2]  n=9
+-    Strong El Nino            40.5 in  [ 35.8 -  45.9]  n=6
++Colorado snowpack ENSO analysis (single-run computed output)
+ 
+-Berthoud Summit (central Front Range) (335:CO:SNTL)
+-  April 1 SWE by ONI bin (median [min-max], n):
+-    Strong La Nina            20.8 in  [ 14.5 -  21.5]  n=4
+-    Weak/Moderate La Nina     20.6 in  [ 10.9 -  25.5]  n=13
+-    Neutral                   18.3 in  [  8.0 -  25.6]  n=14
+-    Weak/Moderate El Nino     16.6 in  [ 15.0 -  22.2]  n=9
+-    Strong El Nino            21.2 in  [ 18.3 -  22.6]  n=6
++Provenance
++  run_utc: 2026-08-22T01:26:11.333422+00:00
++  oni_source_url: https://www.cpc.ncep.noaa.gov/data/indices/oni.ascii.txt
++  awdb_endpoint: https://wcc.sc.egov.usda.gov/awdbRestApi/services/v1
++  stations_file_path: /workspaces/colorado-snowpack-enso/stations_candidate.json
++  stations_file_run_utc: 2026-08-21T22:34:41.002887+00:00
++  station_count: 46
++  region_counts: {'north': 22, 'central': 11, 'south': 13}
++  common_start_wy: 1981
++  end_wy_rule: latest water year with at least one April 1 SWE observation
++  resolved_end_wy: 2026
++  season_count: 46
++  oni_thresholds: {'five_bin': {'strong_la_nina_max': -1.5, 'weak_moderate_la_nina_max': -0.5, 'neutral_min_inclusive': -0.5, 'neutral_max_exclusive': 0.5, 'weak_moderate_el_nino_min_inclusive': 0.5, 'strong_el_nino_min': 1.5}, 'three_bin': {'la_nina_max': -0.5, 'neutral_min_inclusive': -0.5, 'neutral_max_exclusive': 0.5, 'el_nino_min_inclusive': 0.5}}
++  min_seasons_for_test: 8
+ 
+-Wolf Creek Summit (San Juans, south) (874:CO:SNTL)
+-  April 1 SWE by ONI bin (median [min-max], n):
+-    Strong La Nina            38.2 in  [ 18.0 -  44.6]  n=4
+-    Weak/Moderate La Nina     31.8 in  [ 20.4 -  49.4]  n=11
+-    Neutral                   25.1 in  [ 10.1 -  42.0]  n=11
+-    Weak/Moderate El Nino     28.7 in  [ 17.9 -  48.6]  n=9
+-    Strong El Nino            28.3 in  [ 26.5 -  34.7]  n=5
++Gate
++  five_bin season_counts: {'Strong La Nina': 2, 'Weak/Moderate La Nina': 14, 'Neutral': 15, 'Weak/Moderate El Nino': 11, 'Strong El Nino': 4}
++  five_bin all_bins_meet_min_seasons: False
++  five_bin failing_bins: ['Strong La Nina', 'Strong El Nino']
++  three_bin season_counts: {'La Nina': 16, 'Neutral': 15, 'El Nino': 15}
++  three_bin all_bins_meet_min_seasons: True
++  three_bin failing_bins: []
+ 
+-Season counts per ONI bin, WY1981-WY2026:
+-  Strong La Nina           n= 4  [1989, 1999, 2000, 2008]
+-  Weak/Moderate La Nina    n=13  [1984, 1985, 1996, 1997, 2001, 2006, 2009,
+-                                  2011, 2012, 2018, 2021, 2022, 2023]
+-  Neutral                  n=14  [1981, 1982, 1986, 1990, 1991, 1993, 1994,
+-                                  2002, 2004, 2013, 2014, 2017, 2025, 2026]
+-  Weak/Moderate El Nino    n= 9  [1987, 1988, 1995, 2003, 2005, 2007, 2015,
+-                                  2019, 2020]
+-  Strong El Nino           n= 6  [1983, 1992, 1998, 2010, 2016, 2024]
++Statewide results
++  five_bin
++    Strong La Nina: n=2, mean=121.7357, median=121.7357, min=99.5458, max=143.9256, stddev=22.1899, water_years=[1989, 2008]
++    Weak/Moderate La Nina: n=14, mean=105.6636, median=106.9157, min=54.2684, max=144.9139, stddev=25.3465, water_years=[1984, 1985, 1996, 1999, 2000, 2001, 2006, 2009, 2011, 2012, 2018, 2021, 2022, 2023]
++    Neutral: n=15, mean=93.1774, median=93.3988, min=23.5296, max=144.1541, stddev=31.3131, water_years=[1981, 1982, 1986, 1990, 1991, 1993, 1994, 1997, 2002, 2004, 2013, 2014, 2017, 2025, 2026]
++    Weak/Moderate El Nino: n=11, mean=107.0655, median=105.8419, min=72.3106, max=141.4842, stddev=16.7585, water_years=[1987, 1988, 1992, 1995, 2003, 2005, 2007, 2010, 2015, 2019, 2020]
++    Strong El Nino: n=4, mean=108.1107, median=106.5817, min=97.8830, max=121.3966, stddev=9.2840, water_years=[1983, 1998, 2016, 2024]
++  three_bin
++    La Nina: n=16, mean=107.6726, median=106.9157, min=54.2684, max=144.9139, stddev=25.5332, water_years=[1984, 1985, 1989, 1996, 1999, 2000, 2001, 2006, 2008, 2009, 2011, 2012, 2018, 2021, 2022, 2023]
++    Neutral: n=15, mean=93.1774, median=93.3988, min=23.5296, max=144.1541, stddev=31.3131, water_years=[1981, 1982, 1986, 1990, 1991, 1993, 1994, 1997, 2002, 2004, 2013, 2014, 2017, 2025, 2026]
++    El Nino: n=15, mean=107.3442, median=105.8419, min=72.3106, max=141.4842, stddev=15.1378, water_years=[1983, 1987, 1988, 1992, 1995, 1998, 2003, 2005, 2007, 2010, 2015, 2016, 2019, 2020, 2024]
++
++Regional results
++  north
++    station_count_by_water_year: {'WY1981': 22, 'WY1982': 20, 'WY1983': 21, 'WY1984': 22, 'WY1985': 22, 'WY1986': 22, 'WY1987': 22, 'WY1988': 22, 'WY1989': 22, 'WY1990': 22, 'WY1991': 22, 'WY1992': 22, 'WY1993': 22, 'WY1994': 22, 'WY1995': 22, 'WY1996': 22, 'WY1997': 22, 'WY1998': 22, 'WY1999': 22, 'WY2000': 22, 'WY2001': 22, 'WY2002': 22, 'WY2003': 22, 'WY2004': 22, 'WY2005': 22, 'WY2006': 22, 'WY2007': 22, 'WY2008': 22, 'WY2009': 22, 'WY2010': 22, 'WY2011': 22, 'WY2012': 22, 'WY2013': 22, 'WY2014': 22, 'WY2015': 22, 'WY2016': 22, 'WY2017': 22, 'WY2018': 22, 'WY2019': 22, 'WY2020': 22, 'WY2021': 22, 'WY2022': 22, 'WY2023': 22, 'WY2024': 22, 'WY2025': 22, 'WY2026': 22}
++    five_bin
++      Strong La Nina: n=2, mean=113.5646, median=113.5646, min=95.2512, max=131.8780, stddev=18.3134, water_years=[1989, 2008]
++      Weak/Moderate La Nina: n=14, mean=109.2873, median=102.8121, min=47.4357, max=168.8064, stddev=30.8241, water_years=[1984, 1985, 1996, 1999, 2000, 2001, 2006, 2009, 2011, 2012, 2018, 2021, 2022, 2023]
++      Neutral: n=15, mean=92.9395, median=92.1713, min=26.9912, max=144.8193, stddev=30.6308, water_years=[1981, 1982, 1986, 1990, 1991, 1993, 1994, 1997, 2002, 2004, 2013, 2014, 2017, 2025, 2026]
++      Weak/Moderate El Nino: n=11, mean=102.1283, median=93.9019, min=71.9171, max=134.1889, stddev=19.9948, water_years=[1987, 1988, 1992, 1995, 2003, 2005, 2007, 2010, 2015, 2019, 2020]
++      Strong El Nino: n=4, mean=107.0358, median=111.9790, min=89.0796, max=115.1056, stddev=10.5094, water_years=[1983, 1998, 2016, 2024]
++    three_bin
++      La Nina: n=16, mean=109.8220, median=102.8121, min=47.4357, max=168.8064, stddev=29.5852, water_years=[1984, 1985, 1989, 1996, 1999, 2000, 2001, 2006, 2008, 2009, 2011, 2012, 2018, 2021, 2022, 2023]
++      Neutral: n=15, mean=92.9395, median=92.1713, min=26.9912, max=144.8193, stddev=30.6308, water_years=[1981, 1982, 1986, 1990, 1991, 1993, 1994, 1997, 2002, 2004, 2013, 2014, 2017, 2025, 2026]
++      El Nino: n=15, mean=103.4370, median=105.4390, min=71.9171, max=134.1889, stddev=18.0927, water_years=[1983, 1987, 1988, 1992, 1995, 1998, 2003, 2005, 2007, 2010, 2015, 2016, 2019, 2020, 2024]
++  central
++    station_count_by_water_year: {'WY1981': 11, 'WY1982': 11, 'WY1983': 11, 'WY1984': 11, 'WY1985': 11, 'WY1986': 11, 'WY1987': 11, 'WY1988': 11, 'WY1989': 11, 'WY1990': 11, 'WY1991': 11, 'WY1992': 11, 'WY1993': 11, 'WY1994': 11, 'WY1995': 11, 'WY1996': 11, 'WY1997': 11, 'WY1998': 11, 'WY1999': 11, 'WY2000': 11, 'WY2001': 11, 'WY2002': 11, 'WY2003': 11, 'WY2004': 11, 'WY2005': 11, 'WY2006': 11, 'WY2007': 11, 'WY2008': 11, 'WY2009': 11, 'WY2010': 11, 'WY2011': 11, 'WY2012': 11, 'WY2013': 11, 'WY2014': 11, 'WY2015': 11, 'WY2016': 11, 'WY2017': 11, 'WY2018': 11, 'WY2019': 11, 'WY2020': 11, 'WY2021': 11, 'WY2022': 11, 'WY2023': 11, 'WY2024': 11, 'WY2025': 11, 'WY2026': 11}
++    five_bin
++      Strong La Nina: n=2, mean=122.6093, median=122.6093, min=96.3002, max=148.9184, stddev=26.3091, water_years=[1989, 2008]
++      Weak/Moderate La Nina: n=14, mean=105.5935, median=108.7463, min=56.8633, max=141.1816, stddev=24.7481, water_years=[1984, 1985, 1996, 1999, 2000, 2001, 2006, 2009, 2011, 2012, 2018, 2021, 2022, 2023]
++      Neutral: n=15, mean=95.4503, median=94.0314, min=28.9239, max=142.5216, stddev=31.5813, water_years=[1981, 1982, 1986, 1990, 1991, 1993, 1994, 1997, 2002, 2004, 2013, 2014, 2017, 2025, 2026]
++      Weak/Moderate El Nino: n=11, mean=104.7825, median=101.2016, min=82.6939, max=141.1679, stddev=16.8492, water_years=[1987, 1988, 1992, 1995, 2003, 2005, 2007, 2010, 2015, 2019, 2020]
++      Strong El Nino: n=4, mean=105.6596, median=105.4812, min=99.8959, max=111.7802, stddev=5.4085, water_years=[1983, 1998, 2016, 2024]
++    three_bin
++      La Nina: n=16, mean=107.7205, median=108.7463, min=56.8633, max=148.9184, stddev=25.5754, water_years=[1984, 1985, 1989, 1996, 1999, 2000, 2001, 2006, 2008, 2009, 2011, 2012, 2018, 2021, 2022, 2023]
++      Neutral: n=15, mean=95.4503, median=94.0314, min=28.9239, max=142.5216, stddev=31.5813, water_years=[1981, 1982, 1986, 1990, 1991, 1993, 1994, 1997, 2002, 2004, 2013, 2014, 2017, 2025, 2026]
++      El Nino: n=15, mean=105.0164, median=101.2016, min=82.6939, max=141.1679, stddev=14.7017, water_years=[1983, 1987, 1988, 1992, 1995, 1998, 2003, 2005, 2007, 2010, 2015, 2016, 2019, 2020, 2024]
++  south
++    station_count_by_water_year: {'WY1981': 13, 'WY1982': 13, 'WY1983': 13, 'WY1984': 13, 'WY1985': 13, 'WY1986': 13, 'WY1987': 13, 'WY1988': 13, 'WY1989': 13, 'WY1990': 13, 'WY1991': 13, 'WY1992': 13, 'WY1993': 13, 'WY1994': 13, 'WY1995': 13, 'WY1996': 13, 'WY1997': 13, 'WY1998': 13, 'WY1999': 13, 'WY2000': 13, 'WY2001': 13, 'WY2002': 13, 'WY2003': 13, 'WY2004': 13, 'WY2005': 13, 'WY2006': 13, 'WY2007': 13, 'WY2008': 13, 'WY2009': 13, 'WY2010': 13, 'WY2011': 13, 'WY2012': 13, 'WY2013': 13, 'WY2014': 13, 'WY2015': 13, 'WY2016': 13, 'WY2017': 13, 'WY2018': 13, 'WY2019': 13, 'WY2020': 13, 'WY2021': 13, 'WY2022': 13, 'WY2023': 13, 'WY2024': 13, 'WY2025': 13, 'WY2026': 13}
++    five_bin
++      Strong La Nina: n=2, mean=134.8246, median=134.8246, min=109.5599, max=160.0892, stddev=25.2646, water_years=[1989, 2008]
++      Weak/Moderate La Nina: n=14, mean=99.5904, median=98.7516, min=53.6844, max=153.1375, stddev=29.5531, water_years=[1984, 1985, 1996, 1999, 2000, 2001, 2006, 2009, 2011, 2012, 2018, 2021, 2022, 2023]
++      Neutral: n=15, mean=91.5303, median=87.2179, min=13.1073, max=172.4041, stddev=40.4616, water_years=[1981, 1982, 1986, 1990, 1991, 1993, 1994, 1997, 2002, 2004, 2013, 2014, 2017, 2025, 2026]
++      Weak/Moderate El Nino: n=11, mean=117.3525, median=126.4400, min=64.1908, max=164.4685, stddev=33.7159, water_years=[1987, 1988, 1992, 1995, 2003, 2005, 2007, 2010, 2015, 2019, 2020]
++      Strong El Nino: n=4, mean=111.8543, median=108.6966, min=86.6644, max=143.3596, stddev=20.3286, water_years=[1983, 1998, 2016, 2024]
++    three_bin
++      La Nina: n=16, mean=103.9946, median=100.6072, min=53.6844, max=160.0892, stddev=31.3015, water_years=[1984, 1985, 1989, 1996, 1999, 2000, 2001, 2006, 2008, 2009, 2011, 2012, 2018, 2021, 2022, 2023]
++      Neutral: n=15, mean=91.5303, median=87.2179, min=13.1073, max=172.4041, stddev=40.4616, water_years=[1981, 1982, 1986, 1990, 1991, 1993, 1994, 1997, 2002, 2004, 2013, 2014, 2017, 2025, 2026]
++      El Nino: n=15, mean=115.8863, median=110.4214, min=64.1908, max=164.4685, stddev=30.8178, water_years=[1983, 1987, 1988, 1992, 1995, 1998, 2003, 2005, 2007, 2010, 2015, 2016, 2019, 2020, 2024]
++
++Inferential (gated by scheme)
++  five_bin
++    anova: not computed: season count below MIN_SEASONS_FOR_TEST
++    pearson: not computed: season count below MIN_SEASONS_FOR_TEST
++    failing_bins: ['Strong La Nina', 'Strong El Nino']
++  three_bin
++    anova: F=1.5638, p=0.2210
++    pearson: r=0.0135, p=0.9289
+diff --git a/stats.json b/stats.json
+new file mode 100644
+index 0000000..f4f6f10
+--- /dev/null
++++ b/stats.json
+@@ -0,0 +1,1566 @@
++{
++  "provenance": {
++    "run_utc": "2026-08-22T01:26:11.333422+00:00",
++    "oni_source_url": "https://www.cpc.ncep.noaa.gov/data/indices/oni.ascii.txt",
++    "awdb_endpoint": "https://wcc.sc.egov.usda.gov/awdbRestApi/services/v1",
++    "stations_file_path": "/workspaces/colorado-snowpack-enso/stations_candidate.json",
++    "stations_file_run_utc": "2026-08-21T22:34:41.002887+00:00",
++    "station_count": 46,
++    "region_counts": {
++      "north": 22,
++      "central": 11,
++      "south": 13
++    },
++    "common_start_wy": 1981,
++    "end_wy_rule": "latest water year with at least one April 1 SWE observation",
++    "resolved_end_wy": 2026,
++    "season_count": 46,
++    "oni_thresholds": {
++      "five_bin": {
++        "strong_la_nina_max": -1.5,
++        "weak_moderate_la_nina_max": -0.5,
++        "neutral_min_inclusive": -0.5,
++        "neutral_max_exclusive": 0.5,
++        "weak_moderate_el_nino_min_inclusive": 0.5,
++        "strong_el_nino_min": 1.5
++      },
++      "three_bin": {
++        "la_nina_max": -0.5,
++        "neutral_min_inclusive": -0.5,
++        "neutral_max_exclusive": 0.5,
++        "el_nino_min_inclusive": 0.5
++      }
++    },
++    "min_seasons_for_test": 8
++  },
++  "gate": {
++    "five_bin": {
++      "season_counts": {
++        "Strong La Nina": 2,
++        "Weak/Moderate La Nina": 14,
++        "Neutral": 15,
++        "Weak/Moderate El Nino": 11,
++        "Strong El Nino": 4
++      },
++      "all_bins_meet_min_seasons": false,
++      "failing_bins": [
++        "Strong La Nina",
++        "Strong El Nino"
++      ]
++    },
++    "three_bin": {
++      "season_counts": {
++        "La Nina": 16,
++        "Neutral": 15,
++        "El Nino": 15
++      },
++      "all_bins_meet_min_seasons": true,
++      "failing_bins": []
++    }
++  },
++  "statewide": {
++    "five_bin": {
++      "Strong La Nina": {
++        "n_seasons": 2,
++        "mean": 121.73570832405352,
++        "median": 121.73570832405352,
++        "min": 99.54584326030904,
++        "max": 143.92557338779798,
++        "stddev": 22.18986506374447,
++        "water_years": [
++          1989,
++          2008
++        ],
++        "values": [
++          99.54584326030904,
++          143.92557338779798
++        ]
++      },
++      "Weak/Moderate La Nina": {
++        "n_seasons": 14,
++        "mean": 105.66356255154439,
++        "median": 106.91574579093495,
++        "min": 54.2684445838383,
++        "max": 144.91390943120396,
++        "stddev": 25.346537268934277,
++        "water_years": [
++          1984,
++          1985,
++          1996,
++          1999,
++          2000,
++          2001,
++          2006,
++          2009,
++          2011,
++          2012,
++          2018,
++          2021,
++          2022,
++          2023
++        ],
++        "values": [
++          144.91390943120396,
++          120.37372133782952,
++          136.74250085149947,
++          77.05296909030348,
++          106.20575909721522,
++          90.36801573866398,
++          110.08112181873487,
++          107.62573248465469,
++          126.3500532728803,
++          54.2684445838383,
++          72.1825299247878,
++          100.88004756010332,
++          96.58834915011197,
++          135.6567213797946
++        ]
++      },
++      "Neutral": {
++        "n_seasons": 15,
++        "mean": 93.17742082261682,
++        "median": 93.39884531726845,
++        "min": 23.529643197287943,
++        "max": 144.15405814341912,
++        "stddev": 31.31311676673616,
++        "water_years": [
++          1981,
++          1982,
++          1986,
++          1990,
++          1991,
++          1993,
++          1994,
++          1997,
++          2002,
++          2004,
++          2013,
++          2014,
++          2017,
++          2025,
++          2026
++        ],
++        "values": [
++          65.1622287203025,
++          122.84425807644088,
++          115.45635522716026,
++          87.54423621443775,
++          99.8815413061829,
++          144.15405814341912,
++          93.39884531726845,
++          128.42371758760967,
++          57.1710129206237,
++          67.50252427730936,
++          71.52497816311995,
++          124.27857292658537,
++          111.27248246995264,
++          85.51685779155189,
++          23.529643197287943
++        ]
++      },
++      "Weak/Moderate El Nino": {
++        "n_seasons": 11,
++        "mean": 107.06549493806652,
++        "median": 105.84193048687868,
++        "min": 72.31064958282431,
++        "max": 141.48416387892033,
++        "stddev": 16.758483449345512,
++        "water_years": [
++          1987,
++          1988,
++          1992,
++          1995,
++          2003,
++          2005,
++          2007,
++          2010,
++          2015,
++          2019,
++          2020
++        ],
++        "values": [
++          105.84193048687868,
++          103.40920309855912,
++          102.02295772055751,
++          110.23327336165534,
++          115.79588156922135,
++          124.3977895658088,
++          91.08597569545452,
++          103.33407478924951,
++          72.31064958282431,
++          141.48416387892033,
++          107.8045445696024
++        ]
++      },
++      "Strong El Nino": {
++        "n_seasons": 4,
++        "mean": 108.11074366187526,
++        "median": 106.5816937226453,
++        "min": 97.88298154195145,
++        "max": 121.39660566025898,
++        "stddev": 9.283962840898601,
++        "water_years": [
++          1983,
++          1998,
++          2016,
++          2024
++        ],
++        "values": [
++          121.39660566025898,
++          97.88298154195145,
++          101.15165552436433,
++          112.01173192092625
++        ]
++      }
++    },
++    "three_bin": {
++      "La Nina": {
++        "n_seasons": 16,
++        "mean": 107.67258077310804,
++        "median": 106.91574579093495,
++        "min": 54.2684445838383,
++        "max": 144.91390943120396,
++        "stddev": 25.533173050567207,
++        "water_years": [
++          1984,
++          1985,
++          1989,
++          1996,
++          1999,
++          2000,
++          2001,
++          2006,
++          2008,
++          2009,
++          2011,
++          2012,
++          2018,
++          2021,
++          2022,
++          2023
++        ],
++        "values": [
++          144.91390943120396,
++          120.37372133782952,
++          99.54584326030904,
++          136.74250085149947,
++          77.05296909030348,
++          106.20575909721522,
++          90.36801573866398,
++          110.08112181873487,
++          143.92557338779798,
++          107.62573248465469,
++          126.3500532728803,
++          54.2684445838383,
++          72.1825299247878,
++          100.88004756010332,
++          96.58834915011197,
++          135.6567213797946
++        ]
++      },
++      "Neutral": {
++        "n_seasons": 15,
++        "mean": 93.17742082261682,
++        "median": 93.39884531726845,
++        "min": 23.529643197287943,
++        "max": 144.15405814341912,
++        "stddev": 31.31311676673616,
++        "water_years": [
++          1981,
++          1982,
++          1986,
++          1990,
++          1991,
++          1993,
++          1994,
++          1997,
++          2002,
++          2004,
++          2013,
++          2014,
++          2017,
++          2025,
++          2026
++        ],
++        "values": [
++          65.1622287203025,
++          122.84425807644088,
++          115.45635522716026,
++          87.54423621443775,
++          99.8815413061829,
++          144.15405814341912,
++          93.39884531726845,
++          128.42371758760967,
++          57.1710129206237,
++          67.50252427730936,
++          71.52497816311995,
++          124.27857292658537,
++          111.27248246995264,
++          85.51685779155189,
++          23.529643197287943
++        ]
++      },
++      "El Nino": {
++        "n_seasons": 15,
++        "mean": 107.3442279310822,
++        "median": 105.84193048687868,
++        "min": 72.31064958282431,
++        "max": 141.48416387892033,
++        "stddev": 15.13778298436106,
++        "water_years": [
++          1983,
++          1987,
++          1988,
++          1992,
++          1995,
++          1998,
++          2003,
++          2005,
++          2007,
++          2010,
++          2015,
++          2016,
++          2019,
++          2020,
++          2024
++        ],
++        "values": [
++          121.39660566025898,
++          105.84193048687868,
++          103.40920309855912,
++          102.02295772055751,
++          110.23327336165534,
++          97.88298154195145,
++          115.79588156922135,
++          124.3977895658088,
++          91.08597569545452,
++          103.33407478924951,
++          72.31064958282431,
++          101.15165552436433,
++          141.48416387892033,
++          107.8045445696024,
++          112.01173192092625
++        ]
++      }
++    },
++    "station_count_by_water_year": {
++      "WY1981": 46,
++      "WY1982": 44,
++      "WY1983": 45,
++      "WY1984": 46,
++      "WY1985": 46,
++      "WY1986": 46,
++      "WY1987": 46,
++      "WY1988": 46,
++      "WY1989": 46,
++      "WY1990": 46,
++      "WY1991": 46,
++      "WY1992": 46,
++      "WY1993": 46,
++      "WY1994": 46,
++      "WY1995": 46,
++      "WY1996": 46,
++      "WY1997": 46,
++      "WY1998": 46,
++      "WY1999": 46,
++      "WY2000": 46,
++      "WY2001": 46,
++      "WY2002": 46,
++      "WY2003": 46,
++      "WY2004": 46,
++      "WY2005": 46,
++      "WY2006": 46,
++      "WY2007": 46,
++      "WY2008": 46,
++      "WY2009": 46,
++      "WY2010": 46,
++      "WY2011": 46,
++      "WY2012": 46,
++      "WY2013": 46,
++      "WY2014": 46,
++      "WY2015": 46,
++      "WY2016": 46,
++      "WY2017": 46,
++      "WY2018": 46,
++      "WY2019": 46,
++      "WY2020": 46,
++      "WY2021": 46,
++      "WY2022": 46,
++      "WY2023": 46,
++      "WY2024": 46,
++      "WY2025": 46,
++      "WY2026": 46
++    },
++    "seasonal_index_by_water_year": {
++      "WY1981": 65.1622287203025,
++      "WY1982": 122.84425807644088,
++      "WY1983": 121.39660566025898,
++      "WY1984": 144.91390943120396,
++      "WY1985": 120.37372133782952,
++      "WY1986": 115.45635522716026,
++      "WY1987": 105.84193048687868,
++      "WY1988": 103.40920309855912,
++      "WY1989": 99.54584326030904,
++      "WY1990": 87.54423621443775,
++      "WY1991": 99.8815413061829,
++      "WY1992": 102.02295772055751,
++      "WY1993": 144.15405814341912,
++      "WY1994": 93.39884531726845,
++      "WY1995": 110.23327336165534,
++      "WY1996": 136.74250085149947,
++      "WY1997": 128.42371758760967,
++      "WY1998": 97.88298154195145,
++      "WY1999": 77.05296909030348,
++      "WY2000": 106.20575909721522,
++      "WY2001": 90.36801573866398,
++      "WY2002": 57.1710129206237,
++      "WY2003": 115.79588156922135,
++      "WY2004": 67.50252427730936,
++      "WY2005": 124.3977895658088,
++      "WY2006": 110.08112181873487,
++      "WY2007": 91.08597569545452,
++      "WY2008": 143.92557338779798,
++      "WY2009": 107.62573248465469,
++      "WY2010": 103.33407478924951,
++      "WY2011": 126.3500532728803,
++      "WY2012": 54.2684445838383,
++      "WY2013": 71.52497816311995,
++      "WY2014": 124.27857292658537,
++      "WY2015": 72.31064958282431,
++      "WY2016": 101.15165552436433,
++      "WY2017": 111.27248246995264,
++      "WY2018": 72.1825299247878,
++      "WY2019": 141.48416387892033,
++      "WY2020": 107.8045445696024,
++      "WY2021": 100.88004756010332,
++      "WY2022": 96.58834915011197,
++      "WY2023": 135.6567213797946,
++      "WY2024": 112.01173192092625,
++      "WY2025": 85.51685779155189,
++      "WY2026": 23.529643197287943
++    },
++    "oni_oct_mar_by_water_year": {
++      "WY1981": -0.18999999999999997,
++      "WY1982": -0.075,
++      "WY1983": 1.9233333333333331,
++      "WY1984": -0.6883333333333334,
++      "WY1985": -0.8916666666666666,
++      "WY1986": -0.3283333333333333,
++      "WY1987": 1.0766666666666667,
++      "WY1988": 0.7633333333333333,
++      "WY1989": -1.5516666666666667,
++      "WY1990": 0.043333333333333335,
++      "WY1991": 0.29333333333333333,
++      "WY1992": 1.3133333333333332,
++      "WY1993": 0.07166666666666667,
++      "WY1994": 0.11666666666666668,
++      "WY1995": 0.7583333333333333,
++      "WY1996": -0.855,
++      "WY1997": -0.305,
++      "WY1998": 2.08,
++      "WY1999": -1.265,
++      "WY2000": -1.2866666666666666,
++      "WY2001": -0.635,
++      "WY2002": -0.14666666666666667,
++      "WY2003": 0.855,
++      "WY2004": 0.26833333333333337,
++      "WY2005": 0.5883333333333334,
++      "WY2006": -0.6583333333333333,
++      "WY2007": 0.5266666666666667,
++      "WY2008": -1.5683333333333334,
++      "WY2009": -0.68,
++      "WY2010": 1.215,
++      "WY2011": -1.2983333333333333,
++      "WY2012": -0.765,
++      "WY2013": -0.06166666666666667,
++      "WY2014": -0.13999999999999999,
++      "WY2015": 0.685,
++      "WY2016": 2.2866666666666666,
++      "WY2017": -0.18333333333333335,
++      "WY2018": -0.6233333333333334,
++      "WY2019": 0.9516666666666667,
++      "WY2020": 0.6533333333333333,
++      "WY2021": -0.9583333333333334,
++      "WY2022": -0.7866666666666666,
++      "WY2023": -0.5666666666666667,
++      "WY2024": 1.6966666666666665,
++      "WY2025": -0.2783333333333333,
++      "WY2026": -0.37833333333333335
++    }
++  },
++  "regional": {
++    "north": {
++      "station_count_by_water_year": {
++        "WY1981": 22,
++        "WY1982": 20,
++        "WY1983": 21,
++        "WY1984": 22,
++        "WY1985": 22,
++        "WY1986": 22,
++        "WY1987": 22,
++        "WY1988": 22,
++        "WY1989": 22,
++        "WY1990": 22,
++        "WY1991": 22,
++        "WY1992": 22,
++        "WY1993": 22,
++        "WY1994": 22,
++        "WY1995": 22,
++        "WY1996": 22,
++        "WY1997": 22,
++        "WY1998": 22,
++        "WY1999": 22,
++        "WY2000": 22,
++        "WY2001": 22,
++        "WY2002": 22,
++        "WY2003": 22,
++        "WY2004": 22,
++        "WY2005": 22,
++        "WY2006": 22,
++        "WY2007": 22,
++        "WY2008": 22,
++        "WY2009": 22,
++        "WY2010": 22,
++        "WY2011": 22,
++        "WY2012": 22,
++        "WY2013": 22,
++        "WY2014": 22,
++        "WY2015": 22,
++        "WY2016": 22,
++        "WY2017": 22,
++        "WY2018": 22,
++        "WY2019": 22,
++        "WY2020": 22,
++        "WY2021": 22,
++        "WY2022": 22,
++        "WY2023": 22,
++        "WY2024": 22,
++        "WY2025": 22,
++        "WY2026": 22
++      },
++      "five_bin": {
++        "Strong La Nina": {
++          "n_seasons": 2,
++          "mean": 113.56460767209984,
++          "median": 113.56460767209984,
++          "min": 95.25124931932297,
++          "max": 131.8779660248767,
++          "stddev": 18.313358352776874,
++          "water_years": [
++            1989,
++            2008
++          ],
++          "values": [
++            95.25124931932297,
++            131.8779660248767
++          ]
++        },
++        "Weak/Moderate La Nina": {
++          "n_seasons": 14,
++          "mean": 109.28730304032534,
++          "median": 102.81205013386626,
++          "min": 47.43568449560551,
++          "max": 168.80642183434546,
++          "stddev": 30.824102847145614,
++          "water_years": [
++            1984,
++            1985,
++            1996,
++            1999,
++            2000,
++            2001,
++            2006,
++            2009,
++            2011,
++            2012,
++            2018,
++            2021,
++            2022,
++            2023
++          ],
++          "values": [
++            143.1647522346842,
++            102.41228306463094,
++            168.80642183434546,
++            80.91350956476457,
++            112.0646859795031,
++            86.20644768358356,
++            121.18321314189157,
++            103.21181720310159,
++            146.55528737987677,
++            47.43568449560551,
++            83.25561670825446,
++            99.36956677239196,
++            96.41961003147524,
++            139.02334647044577
++          ]
++        },
++        "Neutral": {
++          "n_seasons": 15,
++          "mean": 92.93951811698726,
++          "median": 92.1713498234166,
++          "min": 26.991163187879213,
++          "max": 144.8192507107128,
++          "stddev": 30.630759375552152,
++          "water_years": [
++            1981,
++            1982,
++            1986,
++            1990,
++            1991,
++            1993,
++            1994,
++            1997,
++            2002,
++            2004,
++            2013,
++            2014,
++            2017,
++            2025,
++            2026
++          ],
++          "values": [
++            61.989781049244236,
++            110.50570669019388,
++            123.49119694345107,
++            107.02433393272848,
++            89.34555427513043,
++            128.27711773901393,
++            90.32328463705417,
++            125.30342198554703,
++            63.49960858043653,
++            60.41501993956229,
++            73.42343594949877,
++            144.8192507107128,
++            92.1713498234166,
++            96.51254631093944,
++            26.991163187879213
++          ]
++        },
++        "Weak/Moderate El Nino": {
++          "n_seasons": 11,
++          "mean": 102.12830608202722,
++          "median": 93.90191964977507,
++          "min": 71.91712697252677,
++          "max": 134.1888767945541,
++          "stddev": 19.994843267556114,
++          "water_years": [
++            1987,
++            1988,
++            1992,
++            1995,
++            2003,
++            2005,
++            2007,
++            2010,
++            2015,
++            2019,
++            2020
++          ],
++          "values": [
++            81.47939969973082,
++            126.7335960589554,
++            92.25890667759444,
++            84.31249904155833,
++            134.1888767945541,
++            105.43898211113861,
++            93.90191964977507,
++            91.81987974214431,
++            71.91712697252677,
++            128.9654716611243,
++            112.39470849319737
++          ]
++        },
++        "Strong El Nino": {
++          "n_seasons": 4,
++          "mean": 107.03579395607349,
++          "median": 111.97899115800644,
++          "min": 89.07960861365937,
++          "max": 115.10558489462173,
++          "stddev": 10.509376233453196,
++          "water_years": [
++            1983,
++            1998,
++            2016,
++            2024
++          ],
++          "values": [
++            113.61780784508362,
++            89.07960861365937,
++            110.34017447092926,
++            115.10558489462173
++          ]
++        }
++      },
++      "three_bin": {
++        "La Nina": {
++          "n_seasons": 16,
++          "mean": 109.82196611929714,
++          "median": 102.81205013386626,
++          "min": 47.43568449560551,
++          "max": 168.80642183434546,
++          "stddev": 29.58518363667439,
++          "water_years": [
++            1984,
++            1985,
++            1989,
++            1996,
++            1999,
++            2000,
++            2001,
++            2006,
++            2008,
++            2009,
++            2011,
++            2012,
++            2018,
++            2021,
++            2022,
++            2023
++          ],
++          "values": [
++            143.1647522346842,
++            102.41228306463094,
++            95.25124931932297,
++            168.80642183434546,
++            80.91350956476457,
++            112.0646859795031,
++            86.20644768358356,
++            121.18321314189157,
++            131.8779660248767,
++            103.21181720310159,
++            146.55528737987677,
++            47.43568449560551,
++            83.25561670825446,
++            99.36956677239196,
++            96.41961003147524,
++            139.02334647044577
++          ]
++        },
++        "Neutral": {
++          "n_seasons": 15,
++          "mean": 92.93951811698726,
++          "median": 92.1713498234166,
++          "min": 26.991163187879213,
++          "max": 144.8192507107128,
++          "stddev": 30.630759375552152,
++          "water_years": [
++            1981,
++            1982,
++            1986,
++            1990,
++            1991,
++            1993,
++            1994,
++            1997,
++            2002,
++            2004,
++            2013,
++            2014,
++            2017,
++            2025,
++            2026
++          ],
++          "values": [
++            61.989781049244236,
++            110.50570669019388,
++            123.49119694345107,
++            107.02433393272848,
++            89.34555427513043,
++            128.27711773901393,
++            90.32328463705417,
++            125.30342198554703,
++            63.49960858043653,
++            60.41501993956229,
++            73.42343594949877,
++            144.8192507107128,
++            92.1713498234166,
++            96.51254631093944,
++            26.991163187879213
++          ]
++        },
++        "El Nino": {
++          "n_seasons": 15,
++          "mean": 103.43696951510624,
++          "median": 105.43898211113861,
++          "min": 71.91712697252677,
++          "max": 134.1888767945541,
++          "stddev": 18.092657874987175,
++          "water_years": [
++            1983,
++            1987,
++            1988,
++            1992,
++            1995,
++            1998,
++            2003,
++            2005,
++            2007,
++            2010,
++            2015,
++            2016,
++            2019,
++            2020,
++            2024
++          ],
++          "values": [
++            113.61780784508362,
++            81.47939969973082,
++            126.7335960589554,
++            92.25890667759444,
++            84.31249904155833,
++            89.07960861365937,
++            134.1888767945541,
++            105.43898211113861,
++            93.90191964977507,
++            91.81987974214431,
++            71.91712697252677,
++            110.34017447092926,
++            128.9654716611243,
++            112.39470849319737,
++            115.10558489462173
++          ]
++        }
++      }
++    },
++    "central": {
++      "station_count_by_water_year": {
++        "WY1981": 11,
++        "WY1982": 11,
++        "WY1983": 11,
++        "WY1984": 11,
++        "WY1985": 11,
++        "WY1986": 11,
++        "WY1987": 11,
++        "WY1988": 11,
++        "WY1989": 11,
++        "WY1990": 11,
++        "WY1991": 11,
++        "WY1992": 11,
++        "WY1993": 11,
++        "WY1994": 11,
++        "WY1995": 11,
++        "WY1996": 11,
++        "WY1997": 11,
++        "WY1998": 11,
++        "WY1999": 11,
++        "WY2000": 11,
++        "WY2001": 11,
++        "WY2002": 11,
++        "WY2003": 11,
++        "WY2004": 11,
++        "WY2005": 11,
++        "WY2006": 11,
++        "WY2007": 11,
++        "WY2008": 11,
++        "WY2009": 11,
++        "WY2010": 11,
++        "WY2011": 11,
++        "WY2012": 11,
++        "WY2013": 11,
++        "WY2014": 11,
++        "WY2015": 11,
++        "WY2016": 11,
++        "WY2017": 11,
++        "WY2018": 11,
++        "WY2019": 11,
++        "WY2020": 11,
++        "WY2021": 11,
++        "WY2022": 11,
++        "WY2023": 11,
++        "WY2024": 11,
++        "WY2025": 11,
++        "WY2026": 11
++      },
++      "five_bin": {
++        "Strong La Nina": {
++          "n_seasons": 2,
++          "mean": 122.60927819046366,
++          "median": 122.60927819046366,
++          "min": 96.30017888546666,
++          "max": 148.91837749546065,
++          "stddev": 26.30909930499699,
++          "water_years": [
++            1989,
++            2008
++          ],
++          "values": [
++            96.30017888546666,
++            148.91837749546065
++          ]
++        },
++        "Weak/Moderate La Nina": {
++          "n_seasons": 14,
++          "mean": 105.59350959880814,
++          "median": 108.74627364679566,
++          "min": 56.863289026381715,
++          "max": 141.1816444544587,
++          "stddev": 24.748120949948586,
++          "water_years": [
++            1984,
++            1985,
++            1996,
++            1999,
++            2000,
++            2001,
++            2006,
++            2009,
++            2011,
++            2012,
++            2018,
++            2021,
++            2022,
++            2023
++          ],
++          "values": [
++            141.1816444544587,
++            117.57572705107155,
++            133.74982104554223,
++            83.69251641590209,
++            100.43688286004259,
++            87.25770416260508,
++            119.01012416697849,
++            117.05566443354874,
++            133.49926555549425,
++            56.863289026381715,
++            71.89779975467,
++            90.16595630404942,
++            95.89492711114225,
++            130.02781204142678
++          ]
++        },
++        "Neutral": {
++          "n_seasons": 15,
++          "mean": 95.45026882036747,
++          "median": 94.03139350417281,
++          "min": 28.923914993654805,
++          "max": 142.52158269531773,
++          "stddev": 31.58127930248422,
++          "water_years": [
++            1981,
++            1982,
++            1986,
++            1990,
++            1991,
++            1993,
++            1994,
++            1997,
++            2002,
++            2004,
++            2013,
++            2014,
++            2017,
++            2025,
++            2026
++          ],
++          "values": [
++            65.39929046018163,
++            130.94026832073803,
++            115.31483021045574,
++            75.71793949376887,
++            94.03139350417281,
++            142.52158269531773,
++            92.2331131695711,
++            134.23092310870072,
++            65.06710531440913,
++            71.30871425316474,
++            71.21051270065244,
++            126.99623815557666,
++            123.14706842151153,
++            94.71113750363621,
++            28.923914993654805
++          ]
++        },
++        "Weak/Moderate El Nino": {
++          "n_seasons": 11,
++          "mean": 104.78254062200728,
++          "median": 101.20159118605207,
++          "min": 82.69387422784682,
++          "max": 141.16787866044106,
++          "stddev": 16.849199995842433,
++          "water_years": [
++            1987,
++            1988,
++            1992,
++            1995,
++            2003,
++            2005,
++            2007,
++            2010,
++            2015,
++            2019,
++            2020
++          ],
++          "values": [
++            101.20159118605207,
++            91.6936167532045,
++            92.69459822120064,
++            128.3473480933062,
++            101.75379137507166,
++            114.95908725974692,
++            89.6464743726754,
++            97.78165581110039,
++            82.69387422784682,
++            141.16787866044106,
++            110.66803088143442
++          ]
++        },
++        "Strong El Nino": {
++          "n_seasons": 4,
++          "mean": 105.65961912112752,
++          "median": 105.48116870573385,
++          "min": 99.8959093900689,
++          "max": 111.78022968297346,
++          "stddev": 5.408543953166356,
++          "water_years": [
++            1983,
++            1998,
++            2016,
++            2024
++          ],
++          "values": [
++            110.29071536618643,
++            100.67162204528127,
++            99.8959093900689,
++            111.78022968297346
++          ]
++        }
++      },
++      "three_bin": {
++        "La Nina": {
++          "n_seasons": 16,
++          "mean": 107.72048067276508,
++          "median": 108.74627364679566,
++          "min": 56.863289026381715,
++          "max": 148.91837749546065,
++          "stddev": 25.575377497904004,
++          "water_years": [
++            1984,
++            1985,
++            1989,
++            1996,
++            1999,
++            2000,
++            2001,
++            2006,
++            2008,
++            2009,
++            2011,
++            2012,
++            2018,
++            2021,
++            2022,
++            2023
++          ],
++          "values": [
++            141.1816444544587,
++            117.57572705107155,
++            96.30017888546666,
++            133.74982104554223,
++            83.69251641590209,
++            100.43688286004259,
++            87.25770416260508,
++            119.01012416697849,
++            148.91837749546065,
++            117.05566443354874,
++            133.49926555549425,
++            56.863289026381715,
++            71.89779975467,
++            90.16595630404942,
++            95.89492711114225,
++            130.02781204142678
++          ]
++        },
++        "Neutral": {
++          "n_seasons": 15,
++          "mean": 95.45026882036747,
++          "median": 94.03139350417281,
++          "min": 28.923914993654805,
++          "max": 142.52158269531773,
++          "stddev": 31.58127930248422,
++          "water_years": [
++            1981,
++            1982,
++            1986,
++            1990,
++            1991,
++            1993,
++            1994,
++            1997,
++            2002,
++            2004,
++            2013,
++            2014,
++            2017,
++            2025,
++            2026
++          ],
++          "values": [
++            65.39929046018163,
++            130.94026832073803,
++            115.31483021045574,
++            75.71793949376887,
++            94.03139350417281,
++            142.52158269531773,
++            92.2331131695711,
++            134.23092310870072,
++            65.06710531440913,
++            71.30871425316474,
++            71.21051270065244,
++            126.99623815557666,
++            123.14706842151153,
++            94.71113750363621,
++            28.923914993654805
++          ]
++        },
++        "El Nino": {
++          "n_seasons": 15,
++          "mean": 105.01642822177267,
++          "median": 101.20159118605207,
++          "min": 82.69387422784682,
++          "max": 141.16787866044106,
++          "stddev": 14.701738790376256,
++          "water_years": [
++            1983,
++            1987,
++            1988,
++            1992,
++            1995,
++            1998,
++            2003,
++            2005,
++            2007,
++            2010,
++            2015,
++            2016,
++            2019,
++            2020,
++            2024
++          ],
++          "values": [
++            110.29071536618643,
++            101.20159118605207,
++            91.6936167532045,
++            92.69459822120064,
++            128.3473480933062,
++            100.67162204528127,
++            101.75379137507166,
++            114.95908725974692,
++            89.6464743726754,
++            97.78165581110039,
++            82.69387422784682,
++            99.8959093900689,
++            141.16787866044106,
++            110.66803088143442,
++            111.78022968297346
++          ]
++        }
++      }
++    },
++    "south": {
++      "station_count_by_water_year": {
++        "WY1981": 13,
++        "WY1982": 13,
++        "WY1983": 13,
++        "WY1984": 13,
++        "WY1985": 13,
++        "WY1986": 13,
++        "WY1987": 13,
++        "WY1988": 13,
++        "WY1989": 13,
++        "WY1990": 13,
++        "WY1991": 13,
++        "WY1992": 13,
++        "WY1993": 13,
++        "WY1994": 13,
++        "WY1995": 13,
++        "WY1996": 13,
++        "WY1997": 13,
++        "WY1998": 13,
++        "WY1999": 13,
++        "WY2000": 13,
++        "WY2001": 13,
++        "WY2002": 13,
++        "WY2003": 13,
++        "WY2004": 13,
++        "WY2005": 13,
++        "WY2006": 13,
++        "WY2007": 13,
++        "WY2008": 13,
++        "WY2009": 13,
++        "WY2010": 13,
++        "WY2011": 13,
++        "WY2012": 13,
++        "WY2013": 13,
++        "WY2014": 13,
++        "WY2015": 13,
++        "WY2016": 13,
++        "WY2017": 13,
++        "WY2018": 13,
++        "WY2019": 13,
++        "WY2020": 13,
++        "WY2021": 13,
++        "WY2022": 13,
++        "WY2023": 13,
++        "WY2024": 13,
++        "WY2025": 13,
++        "WY2026": 13
++      },
++      "five_bin": {
++        "Strong La Nina": {
++          "n_seasons": 2,
++          "mean": 134.8245503096281,
++          "median": 134.8245503096281,
++          "min": 109.55994901607525,
++          "max": 160.08915160318097,
++          "stddev": 25.264601293552857,
++          "water_years": [
++            1989,
++            2008
++          ],
++          "values": [
++            109.55994901607525,
++            160.08915160318097
++          ]
++        },
++        "Weak/Moderate La Nina": {
++          "n_seasons": 14,
++          "mean": 99.59035422284579,
++          "median": 98.7515604285069,
++          "min": 53.684385512097734,
++          "max": 153.13753511973,
++          "stddev": 29.55308624721458,
++          "water_years": [
++            1984,
++            1985,
++            1996,
++            1999,
++            2000,
++            2001,
++            2006,
++            2009,
++            2011,
++            2012,
++            2018,
++            2021,
++            2022,
++            2023
++          ],
++          "values": [
++            151.03209197486797,
++            153.13753511973,
++            85.0127482548009,
++            64.90166824263203,
++            101.17200888172027,
++            100.04247147315763,
++            83.73765759257127,
++            107.11626208129573,
++            86.1072466988283,
++            63.635939435618596,
++            53.684385512097734,
++            112.50201534058357,
++            97.4606493838562,
++            134.72227912808074
++          ]
++        },
++        "Neutral": {
++          "n_seasons": 15,
++          "mean": 91.53029708136764,
++          "median": 87.21786302122321,
++          "min": 13.107302462438444,
++          "max": 172.40405189926756,
++          "stddev": 40.46155666338672,
++          "water_years": [
++            1981,
++            1982,
++            1986,
++            1990,
++            1991,
++            1993,
++            1994,
++            1997,
++            2002,
++            2004,
++            2013,
++            2014,
++            2017,
++            2025,
++            2026
++          ],
++          "values": [
++            70.33039561450336,
++            134.97617461780027,
++            101.97868272141812,
++            64.58478345481937,
++            122.66179826812639,
++            172.40405189926756,
++            99.59002905491343,
++            128.79042855017715,
++            39.77977285542972,
++            76.2761401000806,
++            68.57828960825906,
++            87.21786302122321,
++            133.54974960507917,
++            59.12899438697852,
++            13.107302462438444
++          ]
++        },
++        "Weak/Moderate El Nino": {
++          "n_seasons": 11,
++          "mean": 117.35246819264471,
++          "median": 126.43996367733543,
++          "min": 64.19080545446266,
++          "max": 164.468519517303,
++          "stddev": 33.71587920346266,
++          "water_years": [
++            1987,
++            1988,
++            1992,
++            1995,
++            2003,
++            2005,
++            2007,
++            2010,
++            2015,
++            2019,
++            2020
++          ],
++          "values": [
++            150.99726968890525,
++            73.85034191934236,
++            126.43996367733543,
++            138.77190513042257,
++            96.55104289063102,
++            164.468519517303,
++            87.53857166126363,
++            127.51783631201526,
++            64.19080545446266,
++            162.93726897082678,
++            97.61362489658376
++          ]
++        },
++        "Strong El Nino": {
++          "n_seasons": 4,
++          "mean": 111.85432550972678,
++          "median": 108.69662281151493,
++          "min": 86.6644086515044,
++          "max": 143.35964776437288,
++          "stddev": 20.328606555118306,
++          "water_years": [
++            1983,
++            1998,
++            2016,
++            2024
++          ],
++          "values": [
++            143.35964776437288,
++            110.42137837932047,
++            86.6644086515044,
++            106.97186724370938
++          ]
++        }
++      },
++      "three_bin": {
++        "La Nina": {
++          "n_seasons": 16,
++          "mean": 103.99462873369357,
++          "median": 100.60724017743895,
++          "min": 53.684385512097734,
++          "max": 160.08915160318097,
++          "stddev": 31.301481450196402,
++          "water_years": [
++            1984,
++            1985,
++            1989,
++            1996,
++            1999,
++            2000,
++            2001,
++            2006,
++            2008,
++            2009,
++            2011,
++            2012,
++            2018,
++            2021,
++            2022,
++            2023
++          ],
++          "values": [
++            151.03209197486797,
++            153.13753511973,
++            109.55994901607525,
++            85.0127482548009,
++            64.90166824263203,
++            101.17200888172027,
++            100.04247147315763,
++            83.73765759257127,
++            160.08915160318097,
++            107.11626208129573,
++            86.1072466988283,
++            63.635939435618596,
++            53.684385512097734,
++            112.50201534058357,
++            97.4606493838562,
++            134.72227912808074
++          ]
++        },
++        "Neutral": {
++          "n_seasons": 15,
++          "mean": 91.53029708136764,
++          "median": 87.21786302122321,
++          "min": 13.107302462438444,
++          "max": 172.40405189926756,
++          "stddev": 40.46155666338672,
++          "water_years": [
++            1981,
++            1982,
++            1986,
++            1990,
++            1991,
++            1993,
++            1994,
++            1997,
++            2002,
++            2004,
++            2013,
++            2014,
++            2017,
++            2025,
++            2026
++          ],
++          "values": [
++            70.33039561450336,
++            134.97617461780027,
++            101.97868272141812,
++            64.58478345481937,
++            122.66179826812639,
++            172.40405189926756,
++            99.59002905491343,
++            128.79042855017715,
++            39.77977285542972,
++            76.2761401000806,
++            68.57828960825906,
++            87.21786302122321,
++            133.54974960507917,
++            59.12899438697852,
++            13.107302462438444
++          ]
++        },
++        "El Nino": {
++          "n_seasons": 15,
++          "mean": 115.88629681053325,
++          "median": 110.42137837932047,
++          "min": 64.19080545446266,
++          "max": 164.468519517303,
++          "stddev": 30.81779573233578,
++          "water_years": [
++            1983,
++            1987,
++            1988,
++            1992,
++            1995,
++            1998,
++            2003,
++            2005,
++            2007,
++            2010,
++            2015,
++            2016,
++            2019,
++            2020,
++            2024
++          ],
++          "values": [
++            143.35964776437288,
++            150.99726968890525,
++            73.85034191934236,
++            126.43996367733543,
++            138.77190513042257,
++            110.42137837932047,
++            96.55104289063102,
++            164.468519517303,
++            87.53857166126363,
++            127.51783631201526,
++            64.19080545446266,
++            86.6644086515044,
++            162.93726897082678,
++            97.61362489658376,
++            106.97186724370938
++          ]
++        }
++      }
++    }
++  },
++  "station_medians_april1_swe": {
++    "718:CO:SNTL": 15.5,
++    "467:CO:SNTL": 18.35,
++    "438:CO:SNTL": 16.45,
++    "825:CO:SNTL": 42.95,
++    "457:CO:SNTL": 21.6,
++    "551:CO:SNTL": 19.75,
++    "870:CO:SNTL": 17.6,
++    "565:CO:SNTL": 23.700000000000003,
++    "688:CO:SNTL": 9.45,
++    "408:CO:SNTL": 23.2,
++    "869:CO:SNTL": 12.4,
++    "322:CO:SNTL": 17.25,
++    "412:CO:SNTL": 1.3,
++    "607:CO:SNTL": 10.8,
++    "663:CO:SNTL": 12.55,
++    "838:CO:SNTL": 15.35,
++    "564:CO:SNTL": 11.7,
++    "378:CO:SNTL": 15.8,
++    "335:CO:SNTL": 18.65,
++    "802:CO:SNTL": 11.4,
++    "505:CO:SNTL": 16.4,
++    "842:CO:SNTL": 18.8,
++    "415:CO:SNTL": 13.95,
++    "485:CO:SNTL": 15.45,
++    "531:CO:SNTL": 14.75,
++    "556:CO:SNTL": 11.8,
++    "618:CO:SNTL": 15.25,
++    "369:CO:SNTL": 9.850000000000001,
++    "542:CO:SNTL": 15.8,
++    "682:CO:SNTL": 24.85,
++    "380:CO:SNTL": 13.5,
++    "680:CO:SNTL": 10.05,
++    "701:CO:SNTL": 15.75,
++    "762:CO:SNTL": 13.4,
++    "538:CO:SNTL": 13.15,
++    "589:CO:SNTL": 14.7,
++    "713:CO:SNTL": 22.5,
++    "629:CO:SNTL": 14.75,
++    "586:CO:SNTL": 15.05,
++    "624:CO:SNTL": 17.75,
++    "840:CO:SNTL": 27.65,
++    "580:CO:SNTL": 12.8,
++    "303:CO:SNTL": 3.75,
++    "857:CO:SNTL": 9.6,
++    "430:CO:SNTL": 12.600000000000001,
++    "431:CO:SNTL": 25.15
++  },
++  "inferential": {
++    "five_bin": {
++      "scheme": "five_bin",
++      "anova": "not computed: season count below MIN_SEASONS_FOR_TEST",
++      "pearson": "not computed: season count below MIN_SEASONS_FOR_TEST",
++      "failing_bins": [
++        "Strong La Nina",
++        "Strong El Nino"
++      ]
++    },
++    "three_bin": {
++      "scheme": "three_bin",
++      "anova": {
++        "f_statistic": 1.5637915254181536,
++        "p_value": 0.2210124590354853
++      },
++      "pearson": {
++        "r": 0.013532768883697512,
++        "p_value": 0.9288738657237471
++      },
++      "failing_bins": []
++    }
++  }
++}
