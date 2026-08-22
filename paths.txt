@@ -1,0 +1,862 @@
+provenance.run_utc
+provenance.oni_source_url
+provenance.awdb_endpoint
+provenance.stations_file_path
+provenance.stations_file_run_utc
+provenance.station_count
+provenance.region_counts.north
+provenance.region_counts.central
+provenance.region_counts.south
+provenance.common_start_wy
+provenance.end_wy_rule
+provenance.resolved_end_wy
+provenance.season_count
+provenance.oni_thresholds.five_bin.strong_la_nina_max
+provenance.oni_thresholds.five_bin.weak_moderate_la_nina_max
+provenance.oni_thresholds.five_bin.neutral_min_inclusive
+provenance.oni_thresholds.five_bin.neutral_max_exclusive
+provenance.oni_thresholds.five_bin.weak_moderate_el_nino_min_inclusive
+provenance.oni_thresholds.five_bin.strong_el_nino_min
+provenance.oni_thresholds.three_bin.la_nina_max
+provenance.oni_thresholds.three_bin.neutral_min_inclusive
+provenance.oni_thresholds.three_bin.neutral_max_exclusive
+provenance.oni_thresholds.three_bin.el_nino_min_inclusive
+provenance.min_seasons_for_test
+provenance.MIN_STATION_MEDIAN_SWE_IN
+provenance.excluded_station_count_min_median_filter
+provenance.excluded_stations_min_median_filter [list len 2 ]
+gate.five_bin.season_counts.Strong La Nina
+gate.five_bin.season_counts.Weak/Moderate La Nina
+gate.five_bin.season_counts.Neutral
+gate.five_bin.season_counts.Weak/Moderate El Nino
+gate.five_bin.season_counts.Strong El Nino
+gate.five_bin.all_bins_meet_min_seasons
+gate.five_bin.failing_bins [list len 2 ]
+gate.three_bin.season_counts.La Nina
+gate.three_bin.season_counts.Neutral
+gate.three_bin.season_counts.El Nino
+gate.three_bin.all_bins_meet_min_seasons
+gate.three_bin.failing_bins [list len 0 ]
+statewide.five_bin.Strong La Nina.n_seasons
+statewide.five_bin.Strong La Nina.mean
+statewide.five_bin.Strong La Nina.median
+statewide.five_bin.Strong La Nina.min
+statewide.five_bin.Strong La Nina.max
+statewide.five_bin.Strong La Nina.stddev
+statewide.five_bin.Strong La Nina.water_years [list len 2 ]
+statewide.five_bin.Strong La Nina.values [list len 2 ]
+statewide.five_bin.Weak/Moderate La Nina.n_seasons
+statewide.five_bin.Weak/Moderate La Nina.mean
+statewide.five_bin.Weak/Moderate La Nina.median
+statewide.five_bin.Weak/Moderate La Nina.min
+statewide.five_bin.Weak/Moderate La Nina.max
+statewide.five_bin.Weak/Moderate La Nina.stddev
+statewide.five_bin.Weak/Moderate La Nina.water_years [list len 14 ]
+statewide.five_bin.Weak/Moderate La Nina.values [list len 14 ]
+statewide.five_bin.Neutral.n_seasons
+statewide.five_bin.Neutral.mean
+statewide.five_bin.Neutral.median
+statewide.five_bin.Neutral.min
+statewide.five_bin.Neutral.max
+statewide.five_bin.Neutral.stddev
+statewide.five_bin.Neutral.water_years [list len 15 ]
+statewide.five_bin.Neutral.values [list len 15 ]
+statewide.five_bin.Weak/Moderate El Nino.n_seasons
+statewide.five_bin.Weak/Moderate El Nino.mean
+statewide.five_bin.Weak/Moderate El Nino.median
+statewide.five_bin.Weak/Moderate El Nino.min
+statewide.five_bin.Weak/Moderate El Nino.max
+statewide.five_bin.Weak/Moderate El Nino.stddev
+statewide.five_bin.Weak/Moderate El Nino.water_years [list len 11 ]
+statewide.five_bin.Weak/Moderate El Nino.values [list len 11 ]
+statewide.five_bin.Strong El Nino.n_seasons
+statewide.five_bin.Strong El Nino.mean
+statewide.five_bin.Strong El Nino.median
+statewide.five_bin.Strong El Nino.min
+statewide.five_bin.Strong El Nino.max
+statewide.five_bin.Strong El Nino.stddev
+statewide.five_bin.Strong El Nino.water_years [list len 4 ]
+statewide.five_bin.Strong El Nino.values [list len 4 ]
+statewide.three_bin.La Nina.n_seasons
+statewide.three_bin.La Nina.mean
+statewide.three_bin.La Nina.median
+statewide.three_bin.La Nina.min
+statewide.three_bin.La Nina.max
+statewide.three_bin.La Nina.stddev
+statewide.three_bin.La Nina.water_years [list len 16 ]
+statewide.three_bin.La Nina.values [list len 16 ]
+statewide.three_bin.Neutral.n_seasons
+statewide.three_bin.Neutral.mean
+statewide.three_bin.Neutral.median
+statewide.three_bin.Neutral.min
+statewide.three_bin.Neutral.max
+statewide.three_bin.Neutral.stddev
+statewide.three_bin.Neutral.water_years [list len 15 ]
+statewide.three_bin.Neutral.values [list len 15 ]
+statewide.three_bin.El Nino.n_seasons
+statewide.three_bin.El Nino.mean
+statewide.three_bin.El Nino.median
+statewide.three_bin.El Nino.min
+statewide.three_bin.El Nino.max
+statewide.three_bin.El Nino.stddev
+statewide.three_bin.El Nino.water_years [list len 15 ]
+statewide.three_bin.El Nino.values [list len 15 ]
+statewide.station_count_by_water_year.WY1981
+statewide.station_count_by_water_year.WY1982
+statewide.station_count_by_water_year.WY1983
+statewide.station_count_by_water_year.WY1984
+statewide.station_count_by_water_year.WY1985
+statewide.station_count_by_water_year.WY1986
+statewide.station_count_by_water_year.WY1987
+statewide.station_count_by_water_year.WY1988
+statewide.station_count_by_water_year.WY1989
+statewide.station_count_by_water_year.WY1990
+statewide.station_count_by_water_year.WY1991
+statewide.station_count_by_water_year.WY1992
+statewide.station_count_by_water_year.WY1993
+statewide.station_count_by_water_year.WY1994
+statewide.station_count_by_water_year.WY1995
+statewide.station_count_by_water_year.WY1996
+statewide.station_count_by_water_year.WY1997
+statewide.station_count_by_water_year.WY1998
+statewide.station_count_by_water_year.WY1999
+statewide.station_count_by_water_year.WY2000
+statewide.station_count_by_water_year.WY2001
+statewide.station_count_by_water_year.WY2002
+statewide.station_count_by_water_year.WY2003
+statewide.station_count_by_water_year.WY2004
+statewide.station_count_by_water_year.WY2005
+statewide.station_count_by_water_year.WY2006
+statewide.station_count_by_water_year.WY2007
+statewide.station_count_by_water_year.WY2008
+statewide.station_count_by_water_year.WY2009
+statewide.station_count_by_water_year.WY2010
+statewide.station_count_by_water_year.WY2011
+statewide.station_count_by_water_year.WY2012
+statewide.station_count_by_water_year.WY2013
+statewide.station_count_by_water_year.WY2014
+statewide.station_count_by_water_year.WY2015
+statewide.station_count_by_water_year.WY2016
+statewide.station_count_by_water_year.WY2017
+statewide.station_count_by_water_year.WY2018
+statewide.station_count_by_water_year.WY2019
+statewide.station_count_by_water_year.WY2020
+statewide.station_count_by_water_year.WY2021
+statewide.station_count_by_water_year.WY2022
+statewide.station_count_by_water_year.WY2023
+statewide.station_count_by_water_year.WY2024
+statewide.station_count_by_water_year.WY2025
+statewide.station_count_by_water_year.WY2026
+statewide.seasonal_index_by_water_year.WY1981
+statewide.seasonal_index_by_water_year.WY1982
+statewide.seasonal_index_by_water_year.WY1983
+statewide.seasonal_index_by_water_year.WY1984
+statewide.seasonal_index_by_water_year.WY1985
+statewide.seasonal_index_by_water_year.WY1986
+statewide.seasonal_index_by_water_year.WY1987
+statewide.seasonal_index_by_water_year.WY1988
+statewide.seasonal_index_by_water_year.WY1989
+statewide.seasonal_index_by_water_year.WY1990
+statewide.seasonal_index_by_water_year.WY1991
+statewide.seasonal_index_by_water_year.WY1992
+statewide.seasonal_index_by_water_year.WY1993
+statewide.seasonal_index_by_water_year.WY1994
+statewide.seasonal_index_by_water_year.WY1995
+statewide.seasonal_index_by_water_year.WY1996
+statewide.seasonal_index_by_water_year.WY1997
+statewide.seasonal_index_by_water_year.WY1998
+statewide.seasonal_index_by_water_year.WY1999
+statewide.seasonal_index_by_water_year.WY2000
+statewide.seasonal_index_by_water_year.WY2001
+statewide.seasonal_index_by_water_year.WY2002
+statewide.seasonal_index_by_water_year.WY2003
+statewide.seasonal_index_by_water_year.WY2004
+statewide.seasonal_index_by_water_year.WY2005
+statewide.seasonal_index_by_water_year.WY2006
+statewide.seasonal_index_by_water_year.WY2007
+statewide.seasonal_index_by_water_year.WY2008
+statewide.seasonal_index_by_water_year.WY2009
+statewide.seasonal_index_by_water_year.WY2010
+statewide.seasonal_index_by_water_year.WY2011
+statewide.seasonal_index_by_water_year.WY2012
+statewide.seasonal_index_by_water_year.WY2013
+statewide.seasonal_index_by_water_year.WY2014
+statewide.seasonal_index_by_water_year.WY2015
+statewide.seasonal_index_by_water_year.WY2016
+statewide.seasonal_index_by_water_year.WY2017
+statewide.seasonal_index_by_water_year.WY2018
+statewide.seasonal_index_by_water_year.WY2019
+statewide.seasonal_index_by_water_year.WY2020
+statewide.seasonal_index_by_water_year.WY2021
+statewide.seasonal_index_by_water_year.WY2022
+statewide.seasonal_index_by_water_year.WY2023
+statewide.seasonal_index_by_water_year.WY2024
+statewide.seasonal_index_by_water_year.WY2025
+statewide.seasonal_index_by_water_year.WY2026
+statewide.oni_oct_mar_by_water_year.WY1981
+statewide.oni_oct_mar_by_water_year.WY1982
+statewide.oni_oct_mar_by_water_year.WY1983
+statewide.oni_oct_mar_by_water_year.WY1984
+statewide.oni_oct_mar_by_water_year.WY1985
+statewide.oni_oct_mar_by_water_year.WY1986
+statewide.oni_oct_mar_by_water_year.WY1987
+statewide.oni_oct_mar_by_water_year.WY1988
+statewide.oni_oct_mar_by_water_year.WY1989
+statewide.oni_oct_mar_by_water_year.WY1990
+statewide.oni_oct_mar_by_water_year.WY1991
+statewide.oni_oct_mar_by_water_year.WY1992
+statewide.oni_oct_mar_by_water_year.WY1993
+statewide.oni_oct_mar_by_water_year.WY1994
+statewide.oni_oct_mar_by_water_year.WY1995
+statewide.oni_oct_mar_by_water_year.WY1996
+statewide.oni_oct_mar_by_water_year.WY1997
+statewide.oni_oct_mar_by_water_year.WY1998
+statewide.oni_oct_mar_by_water_year.WY1999
+statewide.oni_oct_mar_by_water_year.WY2000
+statewide.oni_oct_mar_by_water_year.WY2001
+statewide.oni_oct_mar_by_water_year.WY2002
+statewide.oni_oct_mar_by_water_year.WY2003
+statewide.oni_oct_mar_by_water_year.WY2004
+statewide.oni_oct_mar_by_water_year.WY2005
+statewide.oni_oct_mar_by_water_year.WY2006
+statewide.oni_oct_mar_by_water_year.WY2007
+statewide.oni_oct_mar_by_water_year.WY2008
+statewide.oni_oct_mar_by_water_year.WY2009
+statewide.oni_oct_mar_by_water_year.WY2010
+statewide.oni_oct_mar_by_water_year.WY2011
+statewide.oni_oct_mar_by_water_year.WY2012
+statewide.oni_oct_mar_by_water_year.WY2013
+statewide.oni_oct_mar_by_water_year.WY2014
+statewide.oni_oct_mar_by_water_year.WY2015
+statewide.oni_oct_mar_by_water_year.WY2016
+statewide.oni_oct_mar_by_water_year.WY2017
+statewide.oni_oct_mar_by_water_year.WY2018
+statewide.oni_oct_mar_by_water_year.WY2019
+statewide.oni_oct_mar_by_water_year.WY2020
+statewide.oni_oct_mar_by_water_year.WY2021
+statewide.oni_oct_mar_by_water_year.WY2022
+statewide.oni_oct_mar_by_water_year.WY2023
+statewide.oni_oct_mar_by_water_year.WY2024
+statewide.oni_oct_mar_by_water_year.WY2025
+statewide.oni_oct_mar_by_water_year.WY2026
+regional.north.station_count_by_water_year.WY1981
+regional.north.station_count_by_water_year.WY1982
+regional.north.station_count_by_water_year.WY1983
+regional.north.station_count_by_water_year.WY1984
+regional.north.station_count_by_water_year.WY1985
+regional.north.station_count_by_water_year.WY1986
+regional.north.station_count_by_water_year.WY1987
+regional.north.station_count_by_water_year.WY1988
+regional.north.station_count_by_water_year.WY1989
+regional.north.station_count_by_water_year.WY1990
+regional.north.station_count_by_water_year.WY1991
+regional.north.station_count_by_water_year.WY1992
+regional.north.station_count_by_water_year.WY1993
+regional.north.station_count_by_water_year.WY1994
+regional.north.station_count_by_water_year.WY1995
+regional.north.station_count_by_water_year.WY1996
+regional.north.station_count_by_water_year.WY1997
+regional.north.station_count_by_water_year.WY1998
+regional.north.station_count_by_water_year.WY1999
+regional.north.station_count_by_water_year.WY2000
+regional.north.station_count_by_water_year.WY2001
+regional.north.station_count_by_water_year.WY2002
+regional.north.station_count_by_water_year.WY2003
+regional.north.station_count_by_water_year.WY2004
+regional.north.station_count_by_water_year.WY2005
+regional.north.station_count_by_water_year.WY2006
+regional.north.station_count_by_water_year.WY2007
+regional.north.station_count_by_water_year.WY2008
+regional.north.station_count_by_water_year.WY2009
+regional.north.station_count_by_water_year.WY2010
+regional.north.station_count_by_water_year.WY2011
+regional.north.station_count_by_water_year.WY2012
+regional.north.station_count_by_water_year.WY2013
+regional.north.station_count_by_water_year.WY2014
+regional.north.station_count_by_water_year.WY2015
+regional.north.station_count_by_water_year.WY2016
+regional.north.station_count_by_water_year.WY2017
+regional.north.station_count_by_water_year.WY2018
+regional.north.station_count_by_water_year.WY2019
+regional.north.station_count_by_water_year.WY2020
+regional.north.station_count_by_water_year.WY2021
+regional.north.station_count_by_water_year.WY2022
+regional.north.station_count_by_water_year.WY2023
+regional.north.station_count_by_water_year.WY2024
+regional.north.station_count_by_water_year.WY2025
+regional.north.station_count_by_water_year.WY2026
+regional.north.five_bin.Strong La Nina.n_seasons
+regional.north.five_bin.Strong La Nina.mean
+regional.north.five_bin.Strong La Nina.median
+regional.north.five_bin.Strong La Nina.min
+regional.north.five_bin.Strong La Nina.max
+regional.north.five_bin.Strong La Nina.stddev
+regional.north.five_bin.Strong La Nina.water_years [list len 2 ]
+regional.north.five_bin.Strong La Nina.values [list len 2 ]
+regional.north.five_bin.Weak/Moderate La Nina.n_seasons
+regional.north.five_bin.Weak/Moderate La Nina.mean
+regional.north.five_bin.Weak/Moderate La Nina.median
+regional.north.five_bin.Weak/Moderate La Nina.min
+regional.north.five_bin.Weak/Moderate La Nina.max
+regional.north.five_bin.Weak/Moderate La Nina.stddev
+regional.north.five_bin.Weak/Moderate La Nina.water_years [list len 14 ]
+regional.north.five_bin.Weak/Moderate La Nina.values [list len 14 ]
+regional.north.five_bin.Neutral.n_seasons
+regional.north.five_bin.Neutral.mean
+regional.north.five_bin.Neutral.median
+regional.north.five_bin.Neutral.min
+regional.north.five_bin.Neutral.max
+regional.north.five_bin.Neutral.stddev
+regional.north.five_bin.Neutral.water_years [list len 15 ]
+regional.north.five_bin.Neutral.values [list len 15 ]
+regional.north.five_bin.Weak/Moderate El Nino.n_seasons
+regional.north.five_bin.Weak/Moderate El Nino.mean
+regional.north.five_bin.Weak/Moderate El Nino.median
+regional.north.five_bin.Weak/Moderate El Nino.min
+regional.north.five_bin.Weak/Moderate El Nino.max
+regional.north.five_bin.Weak/Moderate El Nino.stddev
+regional.north.five_bin.Weak/Moderate El Nino.water_years [list len 11 ]
+regional.north.five_bin.Weak/Moderate El Nino.values [list len 11 ]
+regional.north.five_bin.Strong El Nino.n_seasons
+regional.north.five_bin.Strong El Nino.mean
+regional.north.five_bin.Strong El Nino.median
+regional.north.five_bin.Strong El Nino.min
+regional.north.five_bin.Strong El Nino.max
+regional.north.five_bin.Strong El Nino.stddev
+regional.north.five_bin.Strong El Nino.water_years [list len 4 ]
+regional.north.five_bin.Strong El Nino.values [list len 4 ]
+regional.north.three_bin.La Nina.n_seasons
+regional.north.three_bin.La Nina.mean
+regional.north.three_bin.La Nina.median
+regional.north.three_bin.La Nina.min
+regional.north.three_bin.La Nina.max
+regional.north.three_bin.La Nina.stddev
+regional.north.three_bin.La Nina.water_years [list len 16 ]
+regional.north.three_bin.La Nina.values [list len 16 ]
+regional.north.three_bin.Neutral.n_seasons
+regional.north.three_bin.Neutral.mean
+regional.north.three_bin.Neutral.median
+regional.north.three_bin.Neutral.min
+regional.north.three_bin.Neutral.max
+regional.north.three_bin.Neutral.stddev
+regional.north.three_bin.Neutral.water_years [list len 15 ]
+regional.north.three_bin.Neutral.values [list len 15 ]
+regional.north.three_bin.El Nino.n_seasons
+regional.north.three_bin.El Nino.mean
+regional.north.three_bin.El Nino.median
+regional.north.three_bin.El Nino.min
+regional.north.three_bin.El Nino.max
+regional.north.three_bin.El Nino.stddev
+regional.north.three_bin.El Nino.water_years [list len 15 ]
+regional.north.three_bin.El Nino.values [list len 15 ]
+regional.central.station_count_by_water_year.WY1981
+regional.central.station_count_by_water_year.WY1982
+regional.central.station_count_by_water_year.WY1983
+regional.central.station_count_by_water_year.WY1984
+regional.central.station_count_by_water_year.WY1985
+regional.central.station_count_by_water_year.WY1986
+regional.central.station_count_by_water_year.WY1987
+regional.central.station_count_by_water_year.WY1988
+regional.central.station_count_by_water_year.WY1989
+regional.central.station_count_by_water_year.WY1990
+regional.central.station_count_by_water_year.WY1991
+regional.central.station_count_by_water_year.WY1992
+regional.central.station_count_by_water_year.WY1993
+regional.central.station_count_by_water_year.WY1994
+regional.central.station_count_by_water_year.WY1995
+regional.central.station_count_by_water_year.WY1996
+regional.central.station_count_by_water_year.WY1997
+regional.central.station_count_by_water_year.WY1998
+regional.central.station_count_by_water_year.WY1999
+regional.central.station_count_by_water_year.WY2000
+regional.central.station_count_by_water_year.WY2001
+regional.central.station_count_by_water_year.WY2002
+regional.central.station_count_by_water_year.WY2003
+regional.central.station_count_by_water_year.WY2004
+regional.central.station_count_by_water_year.WY2005
+regional.central.station_count_by_water_year.WY2006
+regional.central.station_count_by_water_year.WY2007
+regional.central.station_count_by_water_year.WY2008
+regional.central.station_count_by_water_year.WY2009
+regional.central.station_count_by_water_year.WY2010
+regional.central.station_count_by_water_year.WY2011
+regional.central.station_count_by_water_year.WY2012
+regional.central.station_count_by_water_year.WY2013
+regional.central.station_count_by_water_year.WY2014
+regional.central.station_count_by_water_year.WY2015
+regional.central.station_count_by_water_year.WY2016
+regional.central.station_count_by_water_year.WY2017
+regional.central.station_count_by_water_year.WY2018
+regional.central.station_count_by_water_year.WY2019
+regional.central.station_count_by_water_year.WY2020
+regional.central.station_count_by_water_year.WY2021
+regional.central.station_count_by_water_year.WY2022
+regional.central.station_count_by_water_year.WY2023
+regional.central.station_count_by_water_year.WY2024
+regional.central.station_count_by_water_year.WY2025
+regional.central.station_count_by_water_year.WY2026
+regional.central.five_bin.Strong La Nina.n_seasons
+regional.central.five_bin.Strong La Nina.mean
+regional.central.five_bin.Strong La Nina.median
+regional.central.five_bin.Strong La Nina.min
+regional.central.five_bin.Strong La Nina.max
+regional.central.five_bin.Strong La Nina.stddev
+regional.central.five_bin.Strong La Nina.water_years [list len 2 ]
+regional.central.five_bin.Strong La Nina.values [list len 2 ]
+regional.central.five_bin.Weak/Moderate La Nina.n_seasons
+regional.central.five_bin.Weak/Moderate La Nina.mean
+regional.central.five_bin.Weak/Moderate La Nina.median
+regional.central.five_bin.Weak/Moderate La Nina.min
+regional.central.five_bin.Weak/Moderate La Nina.max
+regional.central.five_bin.Weak/Moderate La Nina.stddev
+regional.central.five_bin.Weak/Moderate La Nina.water_years [list len 14 ]
+regional.central.five_bin.Weak/Moderate La Nina.values [list len 14 ]
+regional.central.five_bin.Neutral.n_seasons
+regional.central.five_bin.Neutral.mean
+regional.central.five_bin.Neutral.median
+regional.central.five_bin.Neutral.min
+regional.central.five_bin.Neutral.max
+regional.central.five_bin.Neutral.stddev
+regional.central.five_bin.Neutral.water_years [list len 15 ]
+regional.central.five_bin.Neutral.values [list len 15 ]
+regional.central.five_bin.Weak/Moderate El Nino.n_seasons
+regional.central.five_bin.Weak/Moderate El Nino.mean
+regional.central.five_bin.Weak/Moderate El Nino.median
+regional.central.five_bin.Weak/Moderate El Nino.min
+regional.central.five_bin.Weak/Moderate El Nino.max
+regional.central.five_bin.Weak/Moderate El Nino.stddev
+regional.central.five_bin.Weak/Moderate El Nino.water_years [list len 11 ]
+regional.central.five_bin.Weak/Moderate El Nino.values [list len 11 ]
+regional.central.five_bin.Strong El Nino.n_seasons
+regional.central.five_bin.Strong El Nino.mean
+regional.central.five_bin.Strong El Nino.median
+regional.central.five_bin.Strong El Nino.min
+regional.central.five_bin.Strong El Nino.max
+regional.central.five_bin.Strong El Nino.stddev
+regional.central.five_bin.Strong El Nino.water_years [list len 4 ]
+regional.central.five_bin.Strong El Nino.values [list len 4 ]
+regional.central.three_bin.La Nina.n_seasons
+regional.central.three_bin.La Nina.mean
+regional.central.three_bin.La Nina.median
+regional.central.three_bin.La Nina.min
+regional.central.three_bin.La Nina.max
+regional.central.three_bin.La Nina.stddev
+regional.central.three_bin.La Nina.water_years [list len 16 ]
+regional.central.three_bin.La Nina.values [list len 16 ]
+regional.central.three_bin.Neutral.n_seasons
+regional.central.three_bin.Neutral.mean
+regional.central.three_bin.Neutral.median
+regional.central.three_bin.Neutral.min
+regional.central.three_bin.Neutral.max
+regional.central.three_bin.Neutral.stddev
+regional.central.three_bin.Neutral.water_years [list len 15 ]
+regional.central.three_bin.Neutral.values [list len 15 ]
+regional.central.three_bin.El Nino.n_seasons
+regional.central.three_bin.El Nino.mean
+regional.central.three_bin.El Nino.median
+regional.central.three_bin.El Nino.min
+regional.central.three_bin.El Nino.max
+regional.central.three_bin.El Nino.stddev
+regional.central.three_bin.El Nino.water_years [list len 15 ]
+regional.central.three_bin.El Nino.values [list len 15 ]
+regional.south.station_count_by_water_year.WY1981
+regional.south.station_count_by_water_year.WY1982
+regional.south.station_count_by_water_year.WY1983
+regional.south.station_count_by_water_year.WY1984
+regional.south.station_count_by_water_year.WY1985
+regional.south.station_count_by_water_year.WY1986
+regional.south.station_count_by_water_year.WY1987
+regional.south.station_count_by_water_year.WY1988
+regional.south.station_count_by_water_year.WY1989
+regional.south.station_count_by_water_year.WY1990
+regional.south.station_count_by_water_year.WY1991
+regional.south.station_count_by_water_year.WY1992
+regional.south.station_count_by_water_year.WY1993
+regional.south.station_count_by_water_year.WY1994
+regional.south.station_count_by_water_year.WY1995
+regional.south.station_count_by_water_year.WY1996
+regional.south.station_count_by_water_year.WY1997
+regional.south.station_count_by_water_year.WY1998
+regional.south.station_count_by_water_year.WY1999
+regional.south.station_count_by_water_year.WY2000
+regional.south.station_count_by_water_year.WY2001
+regional.south.station_count_by_water_year.WY2002
+regional.south.station_count_by_water_year.WY2003
+regional.south.station_count_by_water_year.WY2004
+regional.south.station_count_by_water_year.WY2005
+regional.south.station_count_by_water_year.WY2006
+regional.south.station_count_by_water_year.WY2007
+regional.south.station_count_by_water_year.WY2008
+regional.south.station_count_by_water_year.WY2009
+regional.south.station_count_by_water_year.WY2010
+regional.south.station_count_by_water_year.WY2011
+regional.south.station_count_by_water_year.WY2012
+regional.south.station_count_by_water_year.WY2013
+regional.south.station_count_by_water_year.WY2014
+regional.south.station_count_by_water_year.WY2015
+regional.south.station_count_by_water_year.WY2016
+regional.south.station_count_by_water_year.WY2017
+regional.south.station_count_by_water_year.WY2018
+regional.south.station_count_by_water_year.WY2019
+regional.south.station_count_by_water_year.WY2020
+regional.south.station_count_by_water_year.WY2021
+regional.south.station_count_by_water_year.WY2022
+regional.south.station_count_by_water_year.WY2023
+regional.south.station_count_by_water_year.WY2024
+regional.south.station_count_by_water_year.WY2025
+regional.south.station_count_by_water_year.WY2026
+regional.south.five_bin.Strong La Nina.n_seasons
+regional.south.five_bin.Strong La Nina.mean
+regional.south.five_bin.Strong La Nina.median
+regional.south.five_bin.Strong La Nina.min
+regional.south.five_bin.Strong La Nina.max
+regional.south.five_bin.Strong La Nina.stddev
+regional.south.five_bin.Strong La Nina.water_years [list len 2 ]
+regional.south.five_bin.Strong La Nina.values [list len 2 ]
+regional.south.five_bin.Weak/Moderate La Nina.n_seasons
+regional.south.five_bin.Weak/Moderate La Nina.mean
+regional.south.five_bin.Weak/Moderate La Nina.median
+regional.south.five_bin.Weak/Moderate La Nina.min
+regional.south.five_bin.Weak/Moderate La Nina.max
+regional.south.five_bin.Weak/Moderate La Nina.stddev
+regional.south.five_bin.Weak/Moderate La Nina.water_years [list len 14 ]
+regional.south.five_bin.Weak/Moderate La Nina.values [list len 14 ]
+regional.south.five_bin.Neutral.n_seasons
+regional.south.five_bin.Neutral.mean
+regional.south.five_bin.Neutral.median
+regional.south.five_bin.Neutral.min
+regional.south.five_bin.Neutral.max
+regional.south.five_bin.Neutral.stddev
+regional.south.five_bin.Neutral.water_years [list len 15 ]
+regional.south.five_bin.Neutral.values [list len 15 ]
+regional.south.five_bin.Weak/Moderate El Nino.n_seasons
+regional.south.five_bin.Weak/Moderate El Nino.mean
+regional.south.five_bin.Weak/Moderate El Nino.median
+regional.south.five_bin.Weak/Moderate El Nino.min
+regional.south.five_bin.Weak/Moderate El Nino.max
+regional.south.five_bin.Weak/Moderate El Nino.stddev
+regional.south.five_bin.Weak/Moderate El Nino.water_years [list len 11 ]
+regional.south.five_bin.Weak/Moderate El Nino.values [list len 11 ]
+regional.south.five_bin.Strong El Nino.n_seasons
+regional.south.five_bin.Strong El Nino.mean
+regional.south.five_bin.Strong El Nino.median
+regional.south.five_bin.Strong El Nino.min
+regional.south.five_bin.Strong El Nino.max
+regional.south.five_bin.Strong El Nino.stddev
+regional.south.five_bin.Strong El Nino.water_years [list len 4 ]
+regional.south.five_bin.Strong El Nino.values [list len 4 ]
+regional.south.three_bin.La Nina.n_seasons
+regional.south.three_bin.La Nina.mean
+regional.south.three_bin.La Nina.median
+regional.south.three_bin.La Nina.min
+regional.south.three_bin.La Nina.max
+regional.south.three_bin.La Nina.stddev
+regional.south.three_bin.La Nina.water_years [list len 16 ]
+regional.south.three_bin.La Nina.values [list len 16 ]
+regional.south.three_bin.Neutral.n_seasons
+regional.south.three_bin.Neutral.mean
+regional.south.three_bin.Neutral.median
+regional.south.three_bin.Neutral.min
+regional.south.three_bin.Neutral.max
+regional.south.three_bin.Neutral.stddev
+regional.south.three_bin.Neutral.water_years [list len 15 ]
+regional.south.three_bin.Neutral.values [list len 15 ]
+regional.south.three_bin.El Nino.n_seasons
+regional.south.three_bin.El Nino.mean
+regional.south.three_bin.El Nino.median
+regional.south.three_bin.El Nino.min
+regional.south.three_bin.El Nino.max
+regional.south.three_bin.El Nino.stddev
+regional.south.three_bin.El Nino.water_years [list len 15 ]
+regional.south.three_bin.El Nino.values [list len 15 ]
+station_medians_april1_swe.718:CO:SNTL
+station_medians_april1_swe.467:CO:SNTL
+station_medians_april1_swe.438:CO:SNTL
+station_medians_april1_swe.825:CO:SNTL
+station_medians_april1_swe.457:CO:SNTL
+station_medians_april1_swe.551:CO:SNTL
+station_medians_april1_swe.870:CO:SNTL
+station_medians_april1_swe.565:CO:SNTL
+station_medians_april1_swe.688:CO:SNTL
+station_medians_april1_swe.408:CO:SNTL
+station_medians_april1_swe.869:CO:SNTL
+station_medians_april1_swe.322:CO:SNTL
+station_medians_april1_swe.607:CO:SNTL
+station_medians_april1_swe.663:CO:SNTL
+station_medians_april1_swe.838:CO:SNTL
+station_medians_april1_swe.564:CO:SNTL
+station_medians_april1_swe.378:CO:SNTL
+station_medians_april1_swe.335:CO:SNTL
+station_medians_april1_swe.802:CO:SNTL
+station_medians_april1_swe.505:CO:SNTL
+station_medians_april1_swe.842:CO:SNTL
+station_medians_april1_swe.415:CO:SNTL
+station_medians_april1_swe.485:CO:SNTL
+station_medians_april1_swe.531:CO:SNTL
+station_medians_april1_swe.556:CO:SNTL
+station_medians_april1_swe.618:CO:SNTL
+station_medians_april1_swe.369:CO:SNTL
+station_medians_april1_swe.542:CO:SNTL
+station_medians_april1_swe.682:CO:SNTL
+station_medians_april1_swe.380:CO:SNTL
+station_medians_april1_swe.680:CO:SNTL
+station_medians_april1_swe.701:CO:SNTL
+station_medians_april1_swe.762:CO:SNTL
+station_medians_april1_swe.538:CO:SNTL
+station_medians_april1_swe.589:CO:SNTL
+station_medians_april1_swe.713:CO:SNTL
+station_medians_april1_swe.629:CO:SNTL
+station_medians_april1_swe.586:CO:SNTL
+station_medians_april1_swe.624:CO:SNTL
+station_medians_april1_swe.840:CO:SNTL
+station_medians_april1_swe.580:CO:SNTL
+station_medians_april1_swe.857:CO:SNTL
+station_medians_april1_swe.430:CO:SNTL
+station_medians_april1_swe.431:CO:SNTL
+north_south_differential.three_bin.La Nina.n_seasons
+north_south_differential.three_bin.La Nina.mean
+north_south_differential.three_bin.La Nina.median
+north_south_differential.three_bin.La Nina.min
+north_south_differential.three_bin.La Nina.max
+north_south_differential.three_bin.La Nina.stddev
+north_south_differential.three_bin.La Nina.water_years [list len 16 ]
+north_south_differential.three_bin.La Nina.values [list len 16 ]
+north_south_differential.three_bin.Neutral.n_seasons
+north_south_differential.three_bin.Neutral.mean
+north_south_differential.three_bin.Neutral.median
+north_south_differential.three_bin.Neutral.min
+north_south_differential.three_bin.Neutral.max
+north_south_differential.three_bin.Neutral.stddev
+north_south_differential.three_bin.Neutral.water_years [list len 15 ]
+north_south_differential.three_bin.Neutral.values [list len 15 ]
+north_south_differential.three_bin.El Nino.n_seasons
+north_south_differential.three_bin.El Nino.mean
+north_south_differential.three_bin.El Nino.median
+north_south_differential.three_bin.El Nino.min
+north_south_differential.three_bin.El Nino.max
+north_south_differential.three_bin.El Nino.stddev
+north_south_differential.three_bin.El Nino.water_years [list len 15 ]
+north_south_differential.three_bin.El Nino.values [list len 15 ]
+north_south_differential.gate.season_counts.La Nina
+north_south_differential.gate.season_counts.Neutral
+north_south_differential.gate.season_counts.El Nino
+north_south_differential.gate.all_bins_meet_min_seasons
+north_south_differential.gate.failing_bins [list len 0 ]
+north_south_differential.inferential.anova.f_statistic
+north_south_differential.inferential.anova.p_value
+north_south_differential.inferential.failing_bins [list len 0 ]
+north_south_differential.inferential.pearson.r
+north_south_differential.inferential.pearson.p_value
+north_south_differential.effect_size_la_nina_minus_el_nino
+north_south_differential.differential_by_water_year.WY1981
+north_south_differential.differential_by_water_year.WY1982
+north_south_differential.differential_by_water_year.WY1983
+north_south_differential.differential_by_water_year.WY1984
+north_south_differential.differential_by_water_year.WY1985
+north_south_differential.differential_by_water_year.WY1986
+north_south_differential.differential_by_water_year.WY1987
+north_south_differential.differential_by_water_year.WY1988
+north_south_differential.differential_by_water_year.WY1989
+north_south_differential.differential_by_water_year.WY1990
+north_south_differential.differential_by_water_year.WY1991
+north_south_differential.differential_by_water_year.WY1992
+north_south_differential.differential_by_water_year.WY1993
+north_south_differential.differential_by_water_year.WY1994
+north_south_differential.differential_by_water_year.WY1995
+north_south_differential.differential_by_water_year.WY1996
+north_south_differential.differential_by_water_year.WY1997
+north_south_differential.differential_by_water_year.WY1998
+north_south_differential.differential_by_water_year.WY1999
+north_south_differential.differential_by_water_year.WY2000
+north_south_differential.differential_by_water_year.WY2001
+north_south_differential.differential_by_water_year.WY2002
+north_south_differential.differential_by_water_year.WY2003
+north_south_differential.differential_by_water_year.WY2004
+north_south_differential.differential_by_water_year.WY2005
+north_south_differential.differential_by_water_year.WY2006
+north_south_differential.differential_by_water_year.WY2007
+north_south_differential.differential_by_water_year.WY2008
+north_south_differential.differential_by_water_year.WY2009
+north_south_differential.differential_by_water_year.WY2010
+north_south_differential.differential_by_water_year.WY2011
+north_south_differential.differential_by_water_year.WY2012
+north_south_differential.differential_by_water_year.WY2013
+north_south_differential.differential_by_water_year.WY2014
+north_south_differential.differential_by_water_year.WY2015
+north_south_differential.differential_by_water_year.WY2016
+north_south_differential.differential_by_water_year.WY2017
+north_south_differential.differential_by_water_year.WY2018
+north_south_differential.differential_by_water_year.WY2019
+north_south_differential.differential_by_water_year.WY2020
+north_south_differential.differential_by_water_year.WY2021
+north_south_differential.differential_by_water_year.WY2022
+north_south_differential.differential_by_water_year.WY2023
+north_south_differential.differential_by_water_year.WY2024
+north_south_differential.differential_by_water_year.WY2025
+north_south_differential.differential_by_water_year.WY2026
+north_south_differential.robustness.iterated_regions [list len 2 ]
+north_south_differential.robustness.leave_one_out_run_count
+north_south_differential.robustness.held_out_stations [list len 33 ]
+north_south_differential.robustness.anova_p_value.leave_one_out_min
+north_south_differential.robustness.anova_p_value.leave_one_out_max
+north_south_differential.robustness.anova_p_value.below_threshold
+north_south_differential.robustness.anova_p_value.below_threshold_count
+north_south_differential.robustness.anova_p_value.below_threshold_of
+north_south_differential.robustness.anova_p_value.not_computed_runs
+north_south_differential.robustness.anova_p_value.not_computed_failing_bins [list len 0 ]
+north_south_differential.robustness.pearson_r.leave_one_out_min
+north_south_differential.robustness.pearson_r.leave_one_out_max
+north_south_differential.robustness.effect_size_la_nina_minus_el_nino.all_stations
+north_south_differential.robustness.effect_size_la_nina_minus_el_nino.leave_one_out_min
+north_south_differential.robustness.effect_size_la_nina_minus_el_nino.leave_one_out_max
+north_south_differential.robustness.effect_size_la_nina_minus_el_nino.sign_matches_all_stations_count
+north_south_differential.robustness.effect_size_la_nina_minus_el_nino.sign_matches_all_stations_of
+north_south_differential.robustness.effect_size_la_nina_minus_el_nino.sign_stability
+inferential.five_bin.scheme
+inferential.five_bin.anova
+inferential.five_bin.pearson
+inferential.five_bin.failing_bins [list len 2 ]
+inferential.three_bin.scheme
+inferential.three_bin.anova.f_statistic
+inferential.three_bin.anova.p_value
+inferential.three_bin.pearson.r
+inferential.three_bin.pearson.p_value
+inferential.three_bin.failing_bins [list len 0 ]
+robustness.scheme
+robustness.scopes.statewide.station_count
+robustness.scopes.statewide.leave_one_out_run_count
+robustness.scopes.statewide.three_bin.La Nina.all_stations_mean
+robustness.scopes.statewide.three_bin.La Nina.leave_one_out_min_mean
+robustness.scopes.statewide.three_bin.La Nina.leave_one_out_max_mean
+robustness.scopes.statewide.three_bin.La Nina.leave_one_out_range
+robustness.scopes.statewide.three_bin.La Nina.leave_one_out_min_held_out_station.triplet
+robustness.scopes.statewide.three_bin.La Nina.leave_one_out_min_held_out_station.name
+robustness.scopes.statewide.three_bin.La Nina.leave_one_out_max_held_out_station.triplet
+robustness.scopes.statewide.three_bin.La Nina.leave_one_out_max_held_out_station.name
+robustness.scopes.statewide.three_bin.Neutral.all_stations_mean
+robustness.scopes.statewide.three_bin.Neutral.leave_one_out_min_mean
+robustness.scopes.statewide.three_bin.Neutral.leave_one_out_max_mean
+robustness.scopes.statewide.three_bin.Neutral.leave_one_out_range
+robustness.scopes.statewide.three_bin.Neutral.leave_one_out_min_held_out_station.triplet
+robustness.scopes.statewide.three_bin.Neutral.leave_one_out_min_held_out_station.name
+robustness.scopes.statewide.three_bin.Neutral.leave_one_out_max_held_out_station.triplet
+robustness.scopes.statewide.three_bin.Neutral.leave_one_out_max_held_out_station.name
+robustness.scopes.statewide.three_bin.El Nino.all_stations_mean
+robustness.scopes.statewide.three_bin.El Nino.leave_one_out_min_mean
+robustness.scopes.statewide.three_bin.El Nino.leave_one_out_max_mean
+robustness.scopes.statewide.three_bin.El Nino.leave_one_out_range
+robustness.scopes.statewide.three_bin.El Nino.leave_one_out_min_held_out_station.triplet
+robustness.scopes.statewide.three_bin.El Nino.leave_one_out_min_held_out_station.name
+robustness.scopes.statewide.three_bin.El Nino.leave_one_out_max_held_out_station.triplet
+robustness.scopes.statewide.three_bin.El Nino.leave_one_out_max_held_out_station.name
+robustness.scopes.statewide.gradient_la_nina_minus_el_nino.all_stations
+robustness.scopes.statewide.gradient_la_nina_minus_el_nino.leave_one_out_min
+robustness.scopes.statewide.gradient_la_nina_minus_el_nino.leave_one_out_max
+robustness.scopes.statewide.gradient_la_nina_minus_el_nino.sign_matches_all_stations_count
+robustness.scopes.statewide.gradient_la_nina_minus_el_nino.sign_matches_all_stations_of
+robustness.scopes.statewide.gradient_la_nina_minus_el_nino.sign_stability
+robustness.scopes.statewide.inferential.anova_p_value.all_stations
+robustness.scopes.statewide.inferential.anova_p_value.leave_one_out_min
+robustness.scopes.statewide.inferential.anova_p_value.leave_one_out_max
+robustness.scopes.statewide.inferential.anova_p_value.below_threshold
+robustness.scopes.statewide.inferential.anova_p_value.below_threshold_count
+robustness.scopes.statewide.inferential.anova_p_value.below_threshold_of
+robustness.scopes.statewide.inferential.pearson_r.all_stations
+robustness.scopes.statewide.inferential.pearson_r.leave_one_out_min
+robustness.scopes.statewide.inferential.pearson_r.leave_one_out_max
+robustness.scopes.north.station_count
+robustness.scopes.north.leave_one_out_run_count
+robustness.scopes.north.three_bin.La Nina.all_stations_mean
+robustness.scopes.north.three_bin.La Nina.leave_one_out_min_mean
+robustness.scopes.north.three_bin.La Nina.leave_one_out_max_mean
+robustness.scopes.north.three_bin.La Nina.leave_one_out_range
+robustness.scopes.north.three_bin.La Nina.leave_one_out_min_held_out_station.triplet
+robustness.scopes.north.three_bin.La Nina.leave_one_out_min_held_out_station.name
+robustness.scopes.north.three_bin.La Nina.leave_one_out_max_held_out_station.triplet
+robustness.scopes.north.three_bin.La Nina.leave_one_out_max_held_out_station.name
+robustness.scopes.north.three_bin.Neutral.all_stations_mean
+robustness.scopes.north.three_bin.Neutral.leave_one_out_min_mean
+robustness.scopes.north.three_bin.Neutral.leave_one_out_max_mean
+robustness.scopes.north.three_bin.Neutral.leave_one_out_range
+robustness.scopes.north.three_bin.Neutral.leave_one_out_min_held_out_station.triplet
+robustness.scopes.north.three_bin.Neutral.leave_one_out_min_held_out_station.name
+robustness.scopes.north.three_bin.Neutral.leave_one_out_max_held_out_station.triplet
+robustness.scopes.north.three_bin.Neutral.leave_one_out_max_held_out_station.name
+robustness.scopes.north.three_bin.El Nino.all_stations_mean
+robustness.scopes.north.three_bin.El Nino.leave_one_out_min_mean
+robustness.scopes.north.three_bin.El Nino.leave_one_out_max_mean
+robustness.scopes.north.three_bin.El Nino.leave_one_out_range
+robustness.scopes.north.three_bin.El Nino.leave_one_out_min_held_out_station.triplet
+robustness.scopes.north.three_bin.El Nino.leave_one_out_min_held_out_station.name
+robustness.scopes.north.three_bin.El Nino.leave_one_out_max_held_out_station.triplet
+robustness.scopes.north.three_bin.El Nino.leave_one_out_max_held_out_station.name
+robustness.scopes.north.gradient_la_nina_minus_el_nino.all_stations
+robustness.scopes.north.gradient_la_nina_minus_el_nino.leave_one_out_min
+robustness.scopes.north.gradient_la_nina_minus_el_nino.leave_one_out_max
+robustness.scopes.north.gradient_la_nina_minus_el_nino.sign_matches_all_stations_count
+robustness.scopes.north.gradient_la_nina_minus_el_nino.sign_matches_all_stations_of
+robustness.scopes.north.gradient_la_nina_minus_el_nino.sign_stability
+robustness.scopes.central.station_count
+robustness.scopes.central.leave_one_out_run_count
+robustness.scopes.central.three_bin.La Nina.all_stations_mean
+robustness.scopes.central.three_bin.La Nina.leave_one_out_min_mean
+robustness.scopes.central.three_bin.La Nina.leave_one_out_max_mean
+robustness.scopes.central.three_bin.La Nina.leave_one_out_range
+robustness.scopes.central.three_bin.La Nina.leave_one_out_min_held_out_station.triplet
+robustness.scopes.central.three_bin.La Nina.leave_one_out_min_held_out_station.name
+robustness.scopes.central.three_bin.La Nina.leave_one_out_max_held_out_station.triplet
+robustness.scopes.central.three_bin.La Nina.leave_one_out_max_held_out_station.name
+robustness.scopes.central.three_bin.Neutral.all_stations_mean
+robustness.scopes.central.three_bin.Neutral.leave_one_out_min_mean
+robustness.scopes.central.three_bin.Neutral.leave_one_out_max_mean
+robustness.scopes.central.three_bin.Neutral.leave_one_out_range
+robustness.scopes.central.three_bin.Neutral.leave_one_out_min_held_out_station.triplet
+robustness.scopes.central.three_bin.Neutral.leave_one_out_min_held_out_station.name
+robustness.scopes.central.three_bin.Neutral.leave_one_out_max_held_out_station.triplet
+robustness.scopes.central.three_bin.Neutral.leave_one_out_max_held_out_station.name
+robustness.scopes.central.three_bin.El Nino.all_stations_mean
+robustness.scopes.central.three_bin.El Nino.leave_one_out_min_mean
+robustness.scopes.central.three_bin.El Nino.leave_one_out_max_mean
+robustness.scopes.central.three_bin.El Nino.leave_one_out_range
+robustness.scopes.central.three_bin.El Nino.leave_one_out_min_held_out_station.triplet
+robustness.scopes.central.three_bin.El Nino.leave_one_out_min_held_out_station.name
+robustness.scopes.central.three_bin.El Nino.leave_one_out_max_held_out_station.triplet
+robustness.scopes.central.three_bin.El Nino.leave_one_out_max_held_out_station.name
+robustness.scopes.central.gradient_la_nina_minus_el_nino.all_stations
+robustness.scopes.central.gradient_la_nina_minus_el_nino.leave_one_out_min
+robustness.scopes.central.gradient_la_nina_minus_el_nino.leave_one_out_max
+robustness.scopes.central.gradient_la_nina_minus_el_nino.sign_matches_all_stations_count
+robustness.scopes.central.gradient_la_nina_minus_el_nino.sign_matches_all_stations_of
+robustness.scopes.central.gradient_la_nina_minus_el_nino.sign_stability
+robustness.scopes.south.station_count
+robustness.scopes.south.leave_one_out_run_count
+robustness.scopes.south.three_bin.La Nina.all_stations_mean
+robustness.scopes.south.three_bin.La Nina.leave_one_out_min_mean
+robustness.scopes.south.three_bin.La Nina.leave_one_out_max_mean
+robustness.scopes.south.three_bin.La Nina.leave_one_out_range
+robustness.scopes.south.three_bin.La Nina.leave_one_out_min_held_out_station.triplet
+robustness.scopes.south.three_bin.La Nina.leave_one_out_min_held_out_station.name
+robustness.scopes.south.three_bin.La Nina.leave_one_out_max_held_out_station.triplet
+robustness.scopes.south.three_bin.La Nina.leave_one_out_max_held_out_station.name
+robustness.scopes.south.three_bin.Neutral.all_stations_mean
+robustness.scopes.south.three_bin.Neutral.leave_one_out_min_mean
+robustness.scopes.south.three_bin.Neutral.leave_one_out_max_mean
+robustness.scopes.south.three_bin.Neutral.leave_one_out_range
+robustness.scopes.south.three_bin.Neutral.leave_one_out_min_held_out_station.triplet
+robustness.scopes.south.three_bin.Neutral.leave_one_out_min_held_out_station.name
+robustness.scopes.south.three_bin.Neutral.leave_one_out_max_held_out_station.triplet
+robustness.scopes.south.three_bin.Neutral.leave_one_out_max_held_out_station.name
+robustness.scopes.south.three_bin.El Nino.all_stations_mean
+robustness.scopes.south.three_bin.El Nino.leave_one_out_min_mean
+robustness.scopes.south.three_bin.El Nino.leave_one_out_max_mean
+robustness.scopes.south.three_bin.El Nino.leave_one_out_range
+robustness.scopes.south.three_bin.El Nino.leave_one_out_min_held_out_station.triplet
+robustness.scopes.south.three_bin.El Nino.leave_one_out_min_held_out_station.name
+robustness.scopes.south.three_bin.El Nino.leave_one_out_max_held_out_station.triplet
+robustness.scopes.south.three_bin.El Nino.leave_one_out_max_held_out_station.name
+robustness.scopes.south.gradient_la_nina_minus_el_nino.all_stations
+robustness.scopes.south.gradient_la_nina_minus_el_nino.leave_one_out_min
+robustness.scopes.south.gradient_la_nina_minus_el_nino.leave_one_out_max
+robustness.scopes.south.gradient_la_nina_minus_el_nino.sign_matches_all_stations_count
+robustness.scopes.south.gradient_la_nina_minus_el_nino.sign_matches_all_stations_of
+robustness.scopes.south.gradient_la_nina_minus_el_nino.sign_stability
