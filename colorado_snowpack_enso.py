@@ -1275,10 +1275,10 @@ def plot_results(stats_payload: Dict[str, object], output_path: Path) -> None:
     ax_seasonal.annotate(
         f"WY{lowest_water_year}",
         xy=(lowest_water_year, lowest_index),
-        xytext=(0, -18),
+        xytext=(0, 12),
         textcoords="offset points",
         ha="center",
-        va="top",
+        va="bottom",
         color=text_color,
         fontsize=9,
         fontfamily=FIGURE_FONT_FAMILY,
@@ -1294,9 +1294,9 @@ def plot_results(stats_payload: Dict[str, object], output_path: Path) -> None:
         ]
     )
 
-    region_positions = [index * 0.8 for index in range(len(REGION_ORDER))]
+    region_positions = [index * 0.78 for index in range(len(REGION_ORDER))]
     bar_width = 0.22
-    bar_spacing = 0.24
+    bar_spacing = 0.26
     for phase_index, phase_name in enumerate(THREE_BIN_ORDER):
         offsets = [
             position + (phase_index - (len(THREE_BIN_ORDER) - 1) / 2) * bar_spacing
@@ -1320,7 +1320,7 @@ def plot_results(stats_payload: Dict[str, object], output_path: Path) -> None:
     ax_regional.set_xticklabels(
         [f"{region.title()}\n(n={region_counts[region]})" for region in REGION_ORDER]
     )
-    ax_regional.set_title("Regional three-bin seasonal means", loc="left")
+    ax_regional.set_title("Regional means, deviation from median", loc="left")
     ax_regional.set_ylabel("Percentage points relative to median")
 
     handles, labels = ax_seasonal.get_legend_handles_labels()
