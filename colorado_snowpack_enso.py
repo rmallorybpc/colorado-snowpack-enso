@@ -84,6 +84,8 @@ DATE_SLICE_END = 10
 PLOT_DPI = 200
 FIG_WIDTH = 16
 FIG_HEIGHT = 10
+PERCENT_OF_MEDIAN_BASELINE = 100.0
+FIGURE_FONT_FAMILY = "DejaVu Sans"
 
 
 def parse_iso_date_prefix(raw_value: str) -> date:
@@ -1215,6 +1217,11 @@ def plot_results(stats_payload: Dict[str, object], output_path: Path) -> None:
         "Neutral": "#6C757D",
         "El Nino": "#E76F51",
     }
+    phase_display_names = {
+        "La Nina": "La Niña",
+        "Neutral": "Neutral",
+        "El Nino": "El Niño",
+    }
     background_color = "#FDFCF0"
     text_color = "#2D3436"
 
@@ -1235,12 +1242,16 @@ def plot_results(stats_payload: Dict[str, object], output_path: Path) -> None:
     fig.patch.set_facecolor(background_color)
     for axis in (ax_seasonal, ax_regional):
         axis.set_facecolor(background_color)
-        axis.axhline(100, color=text_color, linewidth=1, linestyle="--", zorder=1)
         axis.spines[["top", "right"]].set_visible(False)
         axis.spines[["bottom", "left"]].set_color(text_color)
         axis.tick_params(colors=text_color)
         axis.yaxis.label.set_color(text_color)
         axis.title.set_color(text_color)
+
+    ax_seasonal.axhline(
+        PERCENT_OF_MEDIAN_BASELINE, color=text_color, linewidth=1, linestyle="--", zorder=1
+    )
+    ax_regional.axhline(0, color=text_color, linewidth=1, linestyle="--", zorder=1)
 
     for phase_name in THREE_BIN_ORDER:
         phase_years = [
@@ -1258,7 +1269,7 @@ def plot_results(stats_payload: Dict[str, object], output_path: Path) -> None:
             edgecolor=background_color,
             linewidth=0.6,
             s=48,
-            label=phase_name,
+            label=phase_display_names[phase_name],
             zorder=3,
         )
     ax_seasonal.annotate(
@@ -1270,20 +1281,30 @@ def plot_results(stats_payload: Dict[str, object], output_path: Path) -> None:
         va="top",
         color=text_color,
         fontsize=9,
+        fontfamily=FIGURE_FONT_FAMILY,
     )
     ax_seasonal.set_title("Every winter in the statewide April 1 snowpack record", loc="left")
     ax_seasonal.set_ylabel("Percent of median")
     ax_seasonal.set_xlabel("Water year")
+    ax_seasonal.set_xticks(
+        [
+            water_year
+            for water_year in range(water_years[0], water_years[-1] + 1, 5)
+            if water_year != lowest_water_year
+        ]
+    )
 
-    region_positions = list(range(len(REGION_ORDER)))
-    bar_width = 1 / (len(THREE_BIN_ORDER) + 1)
+    region_positions = [index * 0.8 for index in range(len(REGION_ORDER))]
+    bar_width = 0.22
+    bar_spacing = 0.24
     for phase_index, phase_name in enumerate(THREE_BIN_ORDER):
         offsets = [
-            position + (phase_index - (len(THREE_BIN_ORDER) - 1) / 2) * bar_width
+            position + (phase_index - (len(THREE_BIN_ORDER) - 1) / 2) * bar_spacing
             for position in region_positions
         ]
         means = [
             regional[region]["three_bin"][phase_name]["mean"]
+            - PERCENT_OF_MEDIAN_BASELINE
             for region in REGION_ORDER
         ]
         ax_regional.bar(
@@ -1291,7 +1312,7 @@ def plot_results(stats_payload: Dict[str, object], output_path: Path) -> None:
             means,
             width=bar_width,
             color=phase_colors[phase_name],
-            label=phase_name,
+            label=phase_display_names[phase_name],
             zorder=2,
         )
     region_counts = provenance["region_counts"]
@@ -1300,7 +1321,7 @@ def plot_results(stats_payload: Dict[str, object], output_path: Path) -> None:
         [f"{region.title()}\n(n={region_counts[region]})" for region in REGION_ORDER]
     )
     ax_regional.set_title("Regional three-bin seasonal means", loc="left")
-    ax_regional.set_ylabel("Percent of median")
+    ax_regional.set_ylabel("Percentage points relative to median")
 
     handles, labels = ax_seasonal.get_legend_handles_labels()
     fig.legend(
@@ -1310,6 +1331,7 @@ def plot_results(stats_payload: Dict[str, object], output_path: Path) -> None:
         ncol=len(THREE_BIN_ORDER),
         frameon=False,
         labelcolor=text_color,
+        prop={"family": FIGURE_FONT_FAMILY},
     )
     fig.text(
         0.5,
