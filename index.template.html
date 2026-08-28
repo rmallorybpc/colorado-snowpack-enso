@@ -107,6 +107,10 @@
     <h2 class="tmg-card__title">ENSO phase does not predict Colorado snowpack</h2>
     <p>Across {{stats:provenance.season_count}} water years, April 1 snowpack averaged {{stats:statewide.three_bin.La Nina.mean|1}} percent of median in La Niña winters, {{stats:statewide.three_bin.Neutral.mean|1}} percent in neutral winters, and {{stats:statewide.three_bin.El Nino.mean|1}} percent in El Niño winters. A one-way ANOVA across the three phases returns F = {{stats:inferential.three_bin.anova.f_statistic|2}} and p = {{stats:inferential.three_bin.anova.p_value|3}}. The correlation between the October through March ONI value and statewide snowpack is r = {{stats:inferential.three_bin.pearson.r|3}}, with p = {{stats:inferential.three_bin.pearson.p_value|3}}.</p>
     <p>Percent of median here means each station measured against its own April 1 median across its own record, then averaged across stations to produce one value per winter. The unit of analysis is the winter, not the station, because stations in the same season share the same weather.</p>
+    <figure class="tmg-figure">
+      <img src="snowpack_enso_composite.png" alt="Statewide April 1 snowpack index by water year and regional snowpack means by ENSO phase." />
+      <figcaption>The upper panel shows every statewide winter by ENSO phase; the lower panel compares the regional three-bin means, with station counts shown below each region.</figcaption>
+    </figure>
     <div class="tmg-stat-row">
       <article class="tmg-stat">
         <p>{{stats:provenance.station_count}}</p>

@@ -1207,91 +1207,125 @@ def write_text_report(stats_payload: Dict[str, object], path: Path) -> None:
 def plot_results(stats_payload: Dict[str, object], output_path: Path) -> None:
     statewide = stats_payload["statewide"]
     regional = stats_payload["regional"]
-    inferential = stats_payload["inferential"]
+    provenance = stats_payload["provenance"]
+    seasonal_index_by_wy = statewide["seasonal_index_by_water_year"]
+    oni_by_wy = statewide["oni_oct_mar_by_water_year"]
+    phase_colors = {
+        "La Nina": "#2A9D8F",
+        "Neutral": "#6C757D",
+        "El Nino": "#E76F51",
+    }
+    background_color = "#FDFCF0"
+    text_color = "#2D3436"
 
-    fig, axes = plt.subplots(2, 2, figsize=(FIG_WIDTH, FIG_HEIGHT))
-    ax_five = axes[0][0]
-    ax_three = axes[0][1]
-    ax_reg_five = axes[1][0]
-    ax_reg_three = axes[1][1]
+    water_years = sorted(
+        int(water_year.removeprefix("WY")) for water_year in seasonal_index_by_wy
+    )
+    phases = [
+        classify_three_bin(oni_by_wy[f"WY{water_year}"]) for water_year in water_years
+    ]
+    lowest_index, lowest_water_year = min(
+        (seasonal_index_by_wy[f"WY{water_year}"], water_year)
+        for water_year in water_years
+    )
 
-    five_data = [statewide["five_bin"][bin_name]["values"] for bin_name in FIVE_BIN_ORDER]
-    three_data = [statewide["three_bin"][bin_name]["values"] for bin_name in THREE_BIN_ORDER]
+    fig, (ax_seasonal, ax_regional) = plt.subplots(
+        2, 1, figsize=(FIG_WIDTH, FIG_HEIGHT), gridspec_kw={"height_ratios": [3, 2]}
+    )
+    fig.patch.set_facecolor(background_color)
+    for axis in (ax_seasonal, ax_regional):
+        axis.set_facecolor(background_color)
+        axis.axhline(100, color=text_color, linewidth=1, linestyle="--", zorder=1)
+        axis.spines[["top", "right"]].set_visible(False)
+        axis.spines[["bottom", "left"]].set_color(text_color)
+        axis.tick_params(colors=text_color)
+        axis.yaxis.label.set_color(text_color)
+        axis.title.set_color(text_color)
 
-    ax_five.boxplot(five_data, tick_labels=FIVE_BIN_ORDER)
-    ax_five.set_title("Statewide index by five-bin ONI scheme")
-    ax_five.set_ylabel("Seasonal index (% of station median)")
-    ax_five.tick_params(axis="x", rotation=20)
-    for idx, bin_name in enumerate(FIVE_BIN_ORDER, start=1):
-        n_value = statewide["five_bin"][bin_name]["n_seasons"]
-        max_value = statewide["five_bin"][bin_name]["max"]
-        ax_five.text(idx, max_value, f"n={n_value}", ha="center", va="bottom", fontsize=8)
-    if isinstance(inferential["five_bin"]["anova"], str):
-        ax_five.text(
-            0.02,
-            0.95,
-            f"ANOVA {inferential['five_bin']['anova']}\nFailing bins: {inferential['five_bin']['failing_bins']}",
-            transform=ax_five.transAxes,
-            va="top",
-            fontsize=8,
+    for phase_name in THREE_BIN_ORDER:
+        phase_years = [
+            water_year
+            for water_year, phase in zip(water_years, phases)
+            if phase == phase_name
+        ]
+        phase_values = [
+            seasonal_index_by_wy[f"WY{water_year}"] for water_year in phase_years
+        ]
+        ax_seasonal.scatter(
+            phase_years,
+            phase_values,
+            color=phase_colors[phase_name],
+            edgecolor=background_color,
+            linewidth=0.6,
+            s=48,
+            label=phase_name,
+            zorder=3,
         )
+    ax_seasonal.annotate(
+        f"WY{lowest_water_year}",
+        xy=(lowest_water_year, lowest_index),
+        xytext=(0, -18),
+        textcoords="offset points",
+        ha="center",
+        va="top",
+        color=text_color,
+        fontsize=9,
+    )
+    ax_seasonal.set_title("Every winter in the statewide April 1 snowpack record", loc="left")
+    ax_seasonal.set_ylabel("Percent of median")
+    ax_seasonal.set_xlabel("Water year")
 
-    ax_three.boxplot(three_data, tick_labels=THREE_BIN_ORDER)
-    ax_three.set_title("Statewide index by three-bin ONI scheme")
-    ax_three.tick_params(axis="x", rotation=20)
-    for idx, bin_name in enumerate(THREE_BIN_ORDER, start=1):
-        n_value = statewide["three_bin"][bin_name]["n_seasons"]
-        max_value = statewide["three_bin"][bin_name]["max"]
-        ax_three.text(idx, max_value, f"n={n_value}", ha="center", va="bottom", fontsize=8)
-    if isinstance(inferential["three_bin"]["anova"], str):
-        ax_three.text(
-            0.02,
-            0.95,
-            f"ANOVA {inferential['three_bin']['anova']}\nFailing bins: {inferential['three_bin']['failing_bins']}",
-            transform=ax_three.transAxes,
-            va="top",
-            fontsize=8,
+    region_positions = list(range(len(REGION_ORDER)))
+    bar_width = 1 / (len(THREE_BIN_ORDER) + 1)
+    for phase_index, phase_name in enumerate(THREE_BIN_ORDER):
+        offsets = [
+            position + (phase_index - (len(THREE_BIN_ORDER) - 1) / 2) * bar_width
+            for position in region_positions
+        ]
+        means = [
+            regional[region]["three_bin"][phase_name]["mean"]
+            for region in REGION_ORDER
+        ]
+        ax_regional.bar(
+            offsets,
+            means,
+            width=bar_width,
+            color=phase_colors[phase_name],
+            label=phase_name,
+            zorder=2,
         )
-    else:
-        ax_three.text(
-            0.02,
-            0.95,
-            "\n".join(
-                [
-                    "ANOVA "
-                    f"F={format_float(inferential['three_bin']['anova']['f_statistic'])}, "
-                    f"p={format_float(inferential['three_bin']['anova']['p_value'])}",
-                    "Pearson "
-                    f"r={format_float(inferential['three_bin']['pearson']['r'])}, "
-                    f"p={format_float(inferential['three_bin']['pearson']['p_value'])}",
-                ]
-            ),
-            transform=ax_three.transAxes,
-            va="top",
-            fontsize=8,
-        )
+    region_counts = provenance["region_counts"]
+    ax_regional.set_xticks(region_positions)
+    ax_regional.set_xticklabels(
+        [f"{region.title()}\n(n={region_counts[region]})" for region in REGION_ORDER]
+    )
+    ax_regional.set_title("Regional three-bin seasonal means", loc="left")
+    ax_regional.set_ylabel("Percent of median")
 
-    x_positions_five = list(range(1, len(FIVE_BIN_ORDER) + 1))
-    for region in REGION_ORDER:
-        means = [regional[region]["five_bin"][bin_name]["mean"] for bin_name in FIVE_BIN_ORDER]
-        ax_reg_five.plot(x_positions_five, means, marker="o", label=region)
-    ax_reg_five.set_xticks(x_positions_five)
-    ax_reg_five.set_xticklabels(FIVE_BIN_ORDER, rotation=20)
-    ax_reg_five.set_title("Regional seasonal index means (five-bin)")
-    ax_reg_five.set_ylabel("Mean seasonal index (% of station median)")
-    ax_reg_five.legend()
-
-    x_positions_three = list(range(1, len(THREE_BIN_ORDER) + 1))
-    for region in REGION_ORDER:
-        means = [regional[region]["three_bin"][bin_name]["mean"] for bin_name in THREE_BIN_ORDER]
-        ax_reg_three.plot(x_positions_three, means, marker="o", label=region)
-    ax_reg_three.set_xticks(x_positions_three)
-    ax_reg_three.set_xticklabels(THREE_BIN_ORDER, rotation=20)
-    ax_reg_three.set_title("Regional seasonal index means (three-bin)")
-    ax_reg_three.legend()
-
-    fig.suptitle("Colorado April 1 SWE seasonal index vs ENSO")
-    fig.tight_layout()
+    handles, labels = ax_seasonal.get_legend_handles_labels()
+    fig.legend(
+        handles,
+        labels,
+        loc="upper center",
+        ncol=len(THREE_BIN_ORDER),
+        frameon=False,
+        labelcolor=text_color,
+    )
+    fig.text(
+        0.5,
+        0.01,
+        " | ".join(
+            [
+                f"{provenance['station_count']} SNOTEL stations",
+                f"Water years {provenance['common_start_wy']}-{provenance['resolved_end_wy']}",
+                "Values are percent of each station's own April 1 median",
+            ]
+        ),
+        ha="center",
+        color=text_color,
+        fontsize=9,
+    )
+    fig.tight_layout(rect=(0, 0.05, 1, 0.93))
     fig.savefig(output_path, dpi=PLOT_DPI)
     plt.close(fig)
 
