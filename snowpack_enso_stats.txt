@@ -1,7 +1,7 @@
 Colorado snowpack ENSO analysis (single-run computed output)
 
 Provenance
-  run_utc: 2026-08-28T01:28:30.728769+00:00
+  run_utc: 2026-08-28T02:03:25.259016+00:00
   oni_source_url: https://www.cpc.ncep.noaa.gov/data/indices/oni.ascii.txt
   awdb_endpoint: https://wcc.sc.egov.usda.gov/awdbRestApi/services/v1
   stations_file_path: /workspaces/colorado-snowpack-enso/stations_candidate.json
