@@ -1,11 +1,13 @@
 Colorado snowpack ENSO analysis (single-run computed output)
 
 Provenance
-  run_utc: 2026-09-03T03:43:55.294328+00:00
+  run_utc: 2026-09-03T03:53:17.028493+00:00
   oni_source_url: https://www.cpc.ncep.noaa.gov/data/indices/oni.ascii.txt
   awdb_endpoint: https://wcc.sc.egov.usda.gov/awdbRestApi/services/v1
   stations_file_path: /workspaces/colorado-snowpack-enso/stations_candidate.json
   stations_file_run_utc: 2026-08-21T22:34:41.002887+00:00
+  figure_filename: snowpack_enso_composite.png
+  figure_sha256: 910c5f5b28cbb3c313e9fa3d4a08626b089de163c4382f3db4b3516955830d8f
   station_count: 44
   region_counts: {'north': 21, 'central': 11, 'south': 12}
   common_start_wy: 1981

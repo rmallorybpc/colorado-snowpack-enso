@@ -10,6 +10,7 @@ during the same run and writes:
 from __future__ import annotations
 
 import json
+import hashlib
 import math
 import statistics
 from collections import Counter
@@ -918,6 +919,8 @@ def write_text_report(stats_payload: Dict[str, object], path: Path) -> None:
     lines.append(f"  awdb_endpoint: {provenance['awdb_endpoint']}")
     lines.append(f"  stations_file_path: {provenance['stations_file_path']}")
     lines.append(f"  stations_file_run_utc: {provenance['stations_file_run_utc']}")
+    lines.append(f"  figure_filename: {provenance['figure_filename']}")
+    lines.append(f"  figure_sha256: {provenance['figure_sha256']}")
     lines.append(f"  station_count: {provenance['station_count']}")
     lines.append(f"  region_counts: {provenance['region_counts']}")
     lines.append(f"  common_start_wy: {provenance['common_start_wy']}")
@@ -1751,11 +1754,17 @@ def main() -> None:
     stats_text_path = Path("snowpack_enso_stats.txt")
     chart_path = Path("snowpack_enso_composite.png")
 
+    plot_results(stats_payload, chart_path)
+
+    figure_filename = chart_path.resolve().name
+    figure_sha256 = hashlib.sha256(chart_path.read_bytes()).hexdigest()
+    stats_payload["provenance"]["figure_filename"] = figure_filename
+    stats_payload["provenance"]["figure_sha256"] = figure_sha256
+
+    write_text_report(stats_payload, stats_text_path)
     with stats_json_path.open("w", encoding="utf-8") as handle:
         json.dump(stats_payload, handle, indent=2)
         handle.write("\n")
-    write_text_report(stats_payload, stats_text_path)
-    plot_results(stats_payload, chart_path)
 
     print(f"wrote_file={stats_json_path.resolve()}")
     print(f"wrote_file={stats_text_path.resolve()}")
