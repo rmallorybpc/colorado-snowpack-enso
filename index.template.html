@@ -187,6 +187,65 @@
   </section>
 
   <section class="tmg-card" style="margin-top:1rem;">
+    <p class="tmg-section-label">Secondary exploration</p>
+    <h2 class="tmg-card__title">Strength matters, and the record is too thin to say how much</h2>
+    <p>Grouping ENSO into three phases hides a difference between strong events and moderate ones. Splitting into five categories by strength shows the southern tilt belongs to the weaker El Niño winters. Read this as a description of the record, not a result, because the strong categories are too small to test.</p>
+    <div class="tmg-table-wrap">
+      <table class="tmg-table">
+        <thead>
+          <tr>
+            <th>Category</th>
+            <th>Winters</th>
+            <th>North</th>
+            <th>Central</th>
+            <th>South</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Strong La Niña</td>
+            <td>{{stats:gate.five_bin.season_counts.Strong La Nina}}</td>
+            <td>{{stats:regional.north.five_bin.Strong La Nina.mean|1}}</td>
+            <td>{{stats:regional.central.five_bin.Strong La Nina.mean|1}}</td>
+            <td>{{stats:regional.south.five_bin.Strong La Nina.mean|1}}</td>
+          </tr>
+          <tr>
+            <td>Weak or moderate La Niña</td>
+            <td>{{stats:gate.five_bin.season_counts.Weak/Moderate La Nina}}</td>
+            <td>{{stats:regional.north.five_bin.Weak/Moderate La Nina.mean|1}}</td>
+            <td>{{stats:regional.central.five_bin.Weak/Moderate La Nina.mean|1}}</td>
+            <td>{{stats:regional.south.five_bin.Weak/Moderate La Nina.mean|1}}</td>
+          </tr>
+          <tr>
+            <td>Neutral</td>
+            <td>{{stats:gate.five_bin.season_counts.Neutral}}</td>
+            <td>{{stats:regional.north.five_bin.Neutral.mean|1}}</td>
+            <td>{{stats:regional.central.five_bin.Neutral.mean|1}}</td>
+            <td>{{stats:regional.south.five_bin.Neutral.mean|1}}</td>
+          </tr>
+          <tr>
+            <td>Weak or moderate El Niño</td>
+            <td>{{stats:gate.five_bin.season_counts.Weak/Moderate El Nino}}</td>
+            <td>{{stats:regional.north.five_bin.Weak/Moderate El Nino.mean|1}}</td>
+            <td>{{stats:regional.central.five_bin.Weak/Moderate El Nino.mean|1}}</td>
+            <td>{{stats:regional.south.five_bin.Weak/Moderate El Nino.mean|1}}</td>
+          </tr>
+          <tr>
+            <td>Strong El Niño</td>
+            <td>{{stats:gate.five_bin.season_counts.Strong El Nino}}</td>
+            <td>{{stats:regional.north.five_bin.Strong El Nino.mean|1}}</td>
+            <td>{{stats:regional.central.five_bin.Strong El Nino.mean|1}}</td>
+            <td>{{stats:regional.south.five_bin.Strong El Nino.mean|1}}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <p>Values are percent of each station's own April 1 median. No statistical test is run on this grouping, because the strong categories hold too few winters to meet the sample gate.</p>
+    <p>The weak and moderate El Niño winters show the split clearly. The strong El Niño winters do not. Those seasons came in close to each other across all three regions. That is a description of {{stats:gate.five_bin.season_counts.Strong El Nino}} winters and nothing more, and it is the kind of pattern that can vanish when one more winter is added.</p>
+    <p>This matters for reading a seasonal forecast. A projection for a strong El Niño winter cannot be checked against this record, because the record holds only {{stats:gate.five_bin.season_counts.Strong El Nino}} such winters and they did not behave like the moderate ones.</p>
+  </section>
+
+  <section class="tmg-card" style="margin-top:1rem;">
     <p class="tmg-section-label">Context</p>
     <h2 class="tmg-card__title">The worst snowpack on record came in a neutral winter</h2>
     <p>The lowest April 1 value in the entire {{stats:provenance.season_count}}-winter record is {{stats:statewide.three_bin.Neutral.min|1}} percent of median, and it belongs to water year {{stats:provenance.resolved_end_wy}}. That winter was ENSO-neutral. If phase drove Colorado snowpack, the record low would not land in the middle category.</p>
